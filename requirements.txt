@@ -1,0 +1,16 @@
+pandas
+numpy
+matplotlib
+seaborn
+plotly
+networkx
+python-louvain
+scikit-learn
+nltk
+vaderSentiment
+spacy
+python-dotenv
+google-api-python-client
+tqdm
+jupyter
+ipykernel
