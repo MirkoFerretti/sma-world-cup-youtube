@@ -40,3 +40,6 @@ outputs/networks/*
 !outputs/networks/.gitkeep
 !metadata/.gitkeep
 !report/.gitkeep
+
+# Agents.md
+AGENTS.md

@@ -1,100 +1,57 @@
 # Heroes, Villains, and Underdogs: Narrative Communities in World Cup YouTube Discussions
 
-This repository contains the initial setup for a university Social Media Analytics project on how YouTube users build narratives around World Cup matches, teams, players, controversies, rivalries, national pride, and underdog stories.
+This repository contains a university Social Media Analytics project on how YouTube users build narrative communities around the FIFA World Cup 2026.
 
 ## Research Questions
 
-1. Do World Cup YouTube discussions form communities around teams, matches, or shared narratives?
-2. Which narratives dominate each detected community, and how are they expressed through entities, keywords, sentiment, and emotions?
-3. Which users, videos, teams, players, or controversy-related topics bridge different narrative communities?
-
-## Planned Data Source
-
-- YouTube video metadata and comments collected with the YouTube Data API
-- A manually curated list of selected World Cup videos stored in `metadata/selected_videos_template.csv`
-
-## Planned Methods
-
-- YouTube data collection and metadata tracking
-- Comment cleaning and preparation
-- User-video bipartite network construction
-- User-user co-commenting network construction
-- Network A: users with at least 2 distinct videos, edges with weight >= 1
-- Network B: same user pool, edges with weight >= 2, isolated nodes removed
-- Louvain community detection
-- Network summary statistics
-- Centrality measures: degree, weighted degree, PageRank or eigenvector-style importance, and betweenness
-- VADER sentiment analysis
-- Emotion analysis with NRC EmoLex or another simple lexicon-based approach
-- TF-IDF keyword extraction by community
-- Entity extraction with spaCy and optional custom football or player dictionaries
-- Entity co-occurrence network analysis
-- Final narrative labeling based on combined network and content evidence
-
-## Methodological Notes
-
-- Co-commenting represents shared participation in the same video discussion, not direct interaction between users.
-- Louvain communities are algorithmic clusters and should not be treated as objectively real social groups.
-- Sentiment and emotion tools can be noisy, especially with sarcasm, slang, emojis, and multilingual comments.
-- The project prioritizes interpretability, reproducibility, and clear justification over unnecessary complexity.
-
-## Repository Structure
-
-```text
-sma-world-cup-youtube/
-├── AGENTS.md
-├── README.md
-├── requirements.txt
-├── .env.example
-├── .gitignore
-├── data/
-│   ├── raw/
-│   ├── processed/
-│   └── final/
-├── metadata/
-├── notebooks/
-├── src/
-├── outputs/
-│   ├── figures/
-│   ├── tables/
-│   └── networks/
-└── report/
-```
+1. Do World Cup 2026 YouTube discussions form participation communities around specific teams, matches, or broader narratives?
+2. Which narratives dominate detected communities, and how are they expressed through entities, keywords, sentiment, and emotions?
+3. Which users, videos, matches, teams, players, or controversy-related entities bridge different narrative communities?
 
 ## Setup
 
-1. Create a virtual environment:
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
 
-   ```powershell
-   python -m venv .venv
-   ```
-
-2. Activate it:
-
-   ```powershell
-   .\.venv\Scripts\Activate.ps1
-   ```
-
-3. Install dependencies:
-
-   ```powershell
-   pip install -r requirements.txt
-   ```
-
-4. Copy `.env.example` to `.env` and add your YouTube API key.
-
-## YouTube API Key
-
-Create a `.env` file in the project root with:
+Create `.env` in the project root:
 
 ```env
 YOUTUBE_API_KEY=your_api_key_here
 ```
 
-The project loads this value from `src/config.py`.
+Do not commit `.env` or API keys.
 
-## Important Warning
+## Simplified Pipeline
 
-- Do not commit `.env` or API keys.
-- Do not commit raw data collected from the API.
-- Keep intermediate and final outputs reproducible from scripts or notebooks where possible.
+1. Discover candidate videos:
+
+```powershell
+python src/collect_youtube.py discover --config config/youtube_queries.json --output metadata/video_sampling_pilot.csv
+```
+
+2. Apply automatic eligibility filtering:
+
+```powershell
+python src/collect_youtube.py filter-eligible --candidates metadata/video_sampling_pilot.csv --output metadata/video_sampling_pilot.csv
+```
+
+3. Collect top-level comments from eligible videos:
+
+```powershell
+python src/collect_youtube.py collect --selected metadata/video_sampling_pilot.csv --max-comments 200
+```
+
+## Output Files
+
+- `metadata/video_sampling_pilot.csv`: compact video sampling file with both eligible and excluded videos
+- `data/raw/youtube_comments_pilot.csv`: raw top-level comments
+- `outputs/tables/data_collection_summary_pilot.csv`: compact key-value summary
+
+Generated outputs can be regenerated and are overwritten by default.
+
+## Method Note
+
+Later co-commenting networks represent shared participation in the same video discussion space, not direct interaction between users.
