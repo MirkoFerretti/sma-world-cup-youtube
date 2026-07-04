@@ -104,10 +104,87 @@ Current preprocessing result:
 - 19,152 processed comments
 - 16,505 processed users
 - 134 processed videos
-- 1,441 users with at least 2 videos
-- 382 users with at least 3 videos
+- 1,207 users with at least 2 videos
+- 298 users with at least 3 videos
 
 The repeat-user count is sufficient to proceed with the user-video and user-user co-commenting network construction.
+
+## Network Construction
+
+The network step builds two related participation structures from `data/processed/comments_processed.csv`.
+
+The user-video network is the direct bipartite participation structure in the data. One edge means an anonymized user commented on a specific video discussion space. This tells us where participation happened before any projection or community detection.
+
+The user-user co-commenting network is a projection of that bipartite structure. Two users are connected when they both commented on at least one of the same videos. The edge weight is the number of shared videos. This is shared participation, not direct interaction, friendship, agreement, or reply behavior.
+
+This is the most defensible network representation for the project because we do not have follower or friendship data, and we collected top-level comments rather than full reply conversations. Co-commenting therefore captures repeated presence in the same World Cup discussion spaces without overstating what the data can show.
+
+Edge-weight thresholds are diagnostic at this stage:
+
+- weight >= 1 is broad and inclusive but may contain many one-off overlaps from popular videos
+- weight >= 2 captures stronger repeated co-participation
+- weight >= 3 is stricter and useful as a robustness check, but it may remove many users
+
+The goal of this step is not final interpretation yet. It only builds the networks and compares threshold diagnostics so we can later choose a suitable community-detection input.
+
+Outputs from this step:
+
+- `data/processed/user_video_edges.csv`
+- `data/processed/user_network_edges.csv`
+- `data/processed/user_network_nodes.csv`
+- `outputs/tables/network_summary.csv`
+- `outputs/figures/user_participation_distribution.png`
+- `outputs/figures/network_threshold_diagnostics.png`
+
+## Community Detection
+
+### Methodology
+
+Community detection is run after constructing the user-user co-commenting network. The main graph uses edge weight >= 2, where edge weight means the number of videos two users both commented on. In practice, weight >= 2 means two anonymized users shared at least two World Cup video discussion spaces. This threshold was chosen because weight >= 1 was too noisy, while weight >= 3 retained too few users.
+
+Louvain community detection is then applied to the weighted graph. Louvain groups users whose repeated co-commenting connections are denser within the group than outside it.
+
+### Interpretation
+
+The detected groups are participation communities. They represent anonymized users who repeatedly appear in similar World Cup video discussion spaces. They do not represent friendship, direct replies, agreement, or support for the same team. Communities are first profiled with video metadata before any text analysis.
+
+### Results
+
+The current main graph contains 931 users and 4,133 repeated co-commenting edges. Louvain detects 71 communities with modularity = 0.5505. The largest community contains 273 users and the median community size is 2. There are 64 communities with fewer than 10 users, while 6 communities have at least 20 users. Those 6 larger communities cover 76.37% of users in the main graph.
+
+### Insights
+
+The community structure has a clear long tail. A few larger communities contain most of the interpretable structure, while many small communities are peripheral and should not be deeply interpreted. The six larger communities are therefore the main focus for later content analysis.
+
+The preliminary video-metadata profiles already suggest different discussion spaces, including match highlights, post-match reactions, VAR or referee controversy, star-player debate, and tactical blame. Later content analysis will validate and refine these tentative labels.
+
+### Figures
+
+- `community_size_distribution.png` shows the top communities plus the grouped long tail
+- `community_size_long_tail.png` shows all detected communities and makes the long-tail structure visible
+- `community_context_profile.png` shows video-context composition of the main communities
+- `community_category_profile.png` shows sampling-category composition of the main communities
+- `community_network_overview.png` provides an illustrative view of the main graph
+- `community_highlight_C1.png` to `community_highlight_C5.png` highlight the five largest communities inside the same network layout
+
+Network layout positions in the overview and highlight figures are visual aids only and should not be overinterpreted as exact distances.
+
+Outputs from this step:
+
+- `data/processed/user_communities.csv`
+- `data/processed/community_summary.csv`
+- `data/processed/community_video_profiles.csv`
+- `outputs/tables/community_detection_summary.csv`
+- `outputs/figures/community_size_distribution.png`
+- `outputs/figures/community_size_long_tail.png`
+- `outputs/figures/community_context_profile.png`
+- `outputs/figures/community_category_profile.png`
+- `outputs/figures/community_network_overview.png`
+- `outputs/figures/community_highlight_C1.png`
+- `outputs/figures/community_highlight_C2.png`
+- `outputs/figures/community_highlight_C3.png`
+- `outputs/figures/community_highlight_C4.png`
+- `outputs/figures/community_highlight_C5.png`
 
 ## Later Analysis Plan
 
