@@ -86,6 +86,29 @@ This is a deliberate simplification:
 - the 200-comment cap stops very large videos from dominating the pilot corpus;
 - YouTube relevance ordering captures prominent platform-ranked discussion, even though that ranking is not neutral.
 
+## Preprocessing
+
+Before preprocessing, the script runs quick checks on video and comment counts, duplicate IDs, user overlap across videos, category and context balance, and video language metadata.
+
+Raw comments are deduplicated by `comment_id`. The script preserves `original_text` for possible qualitative inspection and creates a lightly cleaned `clean_text` by decoding HTML entities, removing URLs, replacing line breaks, collapsing whitespace, and stripping the final text. Punctuation, capitalization, and negation are kept.
+
+Very short comments are removed with `min_chars = 15` because they usually add little semantic information. Likely non-English comments are also removed because the later text-analysis tools are English-oriented. This language filter is a rule-based heuristic, not a full language-detection model: it uses ASCII or Latin-letter ratio, common English function words, football terms, and token count. It is transparent but imperfect.
+
+Users are pseudonymized with a stable hashed `author_id`. The same YouTube channel always maps to the same anonymous ID, which preserves repeat participation for later network analysis without using raw usernames or channel IDs in the processed dataset.
+
+Compact video metadata is merged through `video_id`. The preprocessing outputs are `data/processed/comments_processed.csv` and `outputs/tables/preprocessing_summary.csv`.
+
+Current preprocessing result:
+
+- 22,594 raw comments
+- 19,152 processed comments
+- 16,505 processed users
+- 134 processed videos
+- 1,441 users with at least 2 videos
+- 382 users with at least 3 videos
+
+The repeat-user count is sufficient to proceed with the user-video and user-user co-commenting network construction.
+
 ## Later Analysis Plan
 
 - user-video participation network

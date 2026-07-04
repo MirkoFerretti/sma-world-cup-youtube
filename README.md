@@ -44,11 +44,21 @@ python src/collect_youtube.py filter-eligible --candidates metadata/video_sampli
 python src/collect_youtube.py collect --selected metadata/video_sampling_pilot.csv --max-comments 200
 ```
 
+4. Run preprocessing:
+
+```powershell
+python src/clean_comments.py
+```
+
+This preprocessing step creates `data/processed/comments_processed.csv` and `outputs/tables/preprocessing_summary.csv`.
+
 ## Output Files
 
 - `metadata/video_sampling_pilot.csv`: compact video sampling file with both eligible and excluded videos
 - `data/raw/youtube_comments_pilot.csv`: raw top-level comments
 - `outputs/tables/data_collection_summary_pilot.csv`: compact key-value summary
+- `data/processed/comments_processed.csv`: lightly cleaned processed comments for later analysis
+- `outputs/tables/preprocessing_summary.csv`: compact preprocessing and preflight summary
 
 Generated outputs can be regenerated and are overwritten by default.
 
