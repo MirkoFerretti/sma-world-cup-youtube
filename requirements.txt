@@ -2,7 +2,6 @@ pandas
 numpy
 matplotlib
 seaborn
-plotly
 networkx
 python-louvain
 scikit-learn
