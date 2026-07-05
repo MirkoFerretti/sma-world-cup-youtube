@@ -16,6 +16,22 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
+For the content-analysis step on Windows, prefer the project venv command:
+
+```powershell
+.\.venv\Scripts\python src/analyze_content.py
+```
+
+Optional spaCy model for hybrid entity extraction:
+
+```powershell
+python -m pip install -U spacy
+python -m spacy download en_core_web_sm
+```
+
+`NRCLex` is required for emotion analysis. If it is missing or incompatible, reinstall it with `.\.venv\Scripts\python -m pip install --upgrade --force-reinstall NRCLex`.
+Entity normalization is used for aliases such as `Ronaldo` or `CR7`, but full external knowledge-base NED/NEL is not used.
+
 Create `.env` in the project root:
 
 ```env
@@ -68,6 +84,24 @@ python src/detect_communities.py
 
 This step creates the main weight >= 2 community assignments, community summaries, community-video profiles, `outputs/tables/community_detection_summary.csv`, and the PNG report figures in `outputs/figures/`.
 
+7. Profile community content:
+
+```powershell
+.\.venv\Scripts\python src/analyze_content.py
+```
+
+This step creates `data/processed/community_content_summary.csv`, `outputs/tables/content_analysis_summary.csv`, and the four content-analysis PNG figures in `outputs/figures/`.
+
+The main pipeline uses `vaderSentiment` for sentiment, `NRCLex` for the eight-emotion NRC-style analysis, dictionary-based entity normalization, and optional spaCy NER. Full NED/NEL is not used.
+
+Optional detail tables:
+
+```powershell
+.\.venv\Scripts\python src/analyze_content.py --write-detail-tables
+```
+
+This writes detailed comment, term, entity, and representative-comment inspection CSVs, but they are not default outputs.
+
 ## Output Files
 
 - `metadata/video_sampling_pilot.csv`: compact video sampling file with both eligible and excluded videos
@@ -85,6 +119,8 @@ This step creates the main weight >= 2 community assignments, community summarie
 - `data/processed/community_summary.csv`: one-row summaries for detected communities
 - `data/processed/community_video_profiles.csv`: community-video participation profiles
 - `outputs/tables/community_detection_summary.csv`: compact community detection summary
+- `data/processed/community_content_summary.csv`: one-row content summaries for detected communities
+- `outputs/tables/content_analysis_summary.csv`: compact content-analysis summary
 - `outputs/figures/community_size_distribution.png`: community size figure
 - `outputs/figures/community_size_long_tail.png`: full long-tail community size diagnostic
 - `outputs/figures/community_context_profile.png`: community context profile figure
@@ -95,6 +131,10 @@ This step creates the main weight >= 2 community assignments, community summarie
 - `outputs/figures/community_highlight_C3.png`: highlight view for the third-largest community
 - `outputs/figures/community_highlight_C4.png`: highlight view for the fourth-largest community
 - `outputs/figures/community_highlight_C5.png`: highlight view for the fifth-largest community
+- `outputs/figures/community_sentiment_profile.png`: stacked sentiment profile for the main communities
+- `outputs/figures/community_emotion_profile.png`: stacked emotion profile for the main communities
+- `outputs/figures/community_top_terms.png`: top TF-IDF terms for the main communities
+- `outputs/figures/community_entity_profile.png`: entity heatmap for the main communities
 
 Generated outputs can be regenerated and are overwritten by default.
 

@@ -5,8 +5,8 @@ seaborn
 networkx
 python-louvain
 scikit-learn
-nltk
 vaderSentiment
+NRCLex
 spacy
 python-dotenv
 google-api-python-client

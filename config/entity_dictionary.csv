@@ -1,0 +1,84 @@
+pattern,normalized_entity,entity_type
+Cristiano Ronaldo,Cristiano Ronaldo,PLAYER_OR_MANAGER
+Cristiano,Cristiano Ronaldo,PLAYER_OR_MANAGER
+Ronaldo,Cristiano Ronaldo,PLAYER_OR_MANAGER
+CR7,Cristiano Ronaldo,PLAYER_OR_MANAGER
+Lionel Messi,Lionel Messi,PLAYER_OR_MANAGER
+Leo Messi,Lionel Messi,PLAYER_OR_MANAGER
+Messi,Lionel Messi,PLAYER_OR_MANAGER
+Kylian Mbappé,Kylian Mbappé,PLAYER_OR_MANAGER
+Kylian Mbappe,Kylian Mbappé,PLAYER_OR_MANAGER
+Mbappé,Kylian Mbappé,PLAYER_OR_MANAGER
+Mbappe,Kylian Mbappé,PLAYER_OR_MANAGER
+MbappÃ©,Kylian Mbappé,PLAYER_OR_MANAGER
+Kylian MbappÃ©,Kylian Mbappé,PLAYER_OR_MANAGER
+Harry Kane,Harry Kane,PLAYER_OR_MANAGER
+Kane,Harry Kane,PLAYER_OR_MANAGER
+Steve Clarke,Steve Clarke,PLAYER_OR_MANAGER
+Steve Clark,Steve Clarke,PLAYER_OR_MANAGER
+Clarke,Steve Clarke,PLAYER_OR_MANAGER
+Portugal,Portugal,TEAM_OR_COUNTRY
+Portuguese,Portugal,TEAM_OR_COUNTRY
+Croatia,Croatia,TEAM_OR_COUNTRY
+Croatian,Croatia,TEAM_OR_COUNTRY
+Germany,Germany,TEAM_OR_COUNTRY
+German,Germany,TEAM_OR_COUNTRY
+England,England,TEAM_OR_COUNTRY
+English,England,TEAM_OR_COUNTRY
+Scotland,Scotland,TEAM_OR_COUNTRY
+Scottish,Scotland,TEAM_OR_COUNTRY
+Brazil,Brazil,TEAM_OR_COUNTRY
+Brazilian,Brazil,TEAM_OR_COUNTRY
+Argentina,Argentina,TEAM_OR_COUNTRY
+Argentinian,Argentina,TEAM_OR_COUNTRY
+Colombia,Colombia,TEAM_OR_COUNTRY
+Colombian,Colombia,TEAM_OR_COUNTRY
+Paraguay,Paraguay,TEAM_OR_COUNTRY
+Paraguayan,Paraguay,TEAM_OR_COUNTRY
+Japan,Japan,TEAM_OR_COUNTRY
+Japanese,Japan,TEAM_OR_COUNTRY
+Senegal,Senegal,TEAM_OR_COUNTRY
+Senegalese,Senegal,TEAM_OR_COUNTRY
+Norway,Norway,TEAM_OR_COUNTRY
+Norwegian,Norway,TEAM_OR_COUNTRY
+Jordan,Jordan,TEAM_OR_COUNTRY
+Austria,Austria,TEAM_OR_COUNTRY
+Austrian,Austria,TEAM_OR_COUNTRY
+Belgium,Belgium,TEAM_OR_COUNTRY
+Belgian,Belgium,TEAM_OR_COUNTRY
+Netherlands,Netherlands,TEAM_OR_COUNTRY
+Dutch,Netherlands,TEAM_OR_COUNTRY
+USA,USA,TEAM_OR_COUNTRY
+United States,USA,TEAM_OR_COUNTRY
+Congo DR,Congo DR,TEAM_OR_COUNTRY
+DR Congo,Congo DR,TEAM_OR_COUNTRY
+DRC,Congo DR,TEAM_OR_COUNTRY
+World Cup,World Cup,COMPETITION
+FIFA World Cup,World Cup,COMPETITION
+Round of 16,Round of 16,COMPETITION
+Group Stage,Group Stage,COMPETITION
+VAR,VAR,REFEREE_VAR_CONCEPT
+referee,Referee,REFEREE_VAR_CONCEPT
+ref,Referee,REFEREE_VAR_CONCEPT
+refs,Referee,REFEREE_VAR_CONCEPT
+off-side,Offside,REFEREE_VAR_CONCEPT
+offside,Offside,REFEREE_VAR_CONCEPT
+penalties,Penalty,REFEREE_VAR_CONCEPT
+penalty,Penalty,REFEREE_VAR_CONCEPT
+disallowed goal,Disallowed Goal,REFEREE_VAR_CONCEPT
+red card,Red Card,REFEREE_VAR_CONCEPT
+yellow card,Yellow Card,REFEREE_VAR_CONCEPT
+handball,Handball,REFEREE_VAR_CONCEPT
+foul,Foul,REFEREE_VAR_CONCEPT
+FIFA,FIFA,ORG
+ESPN,ESPN,ORG
+ITV,ITV,ORG
+CBS,CBS,ORG
+hat trick,Hat Trick,FOOTBALL_CONCEPT
+clean sheet,Clean Sheet,FOOTBALL_CONCEPT
+own goal,Own Goal,FOOTBALL_CONCEPT
+extra time,Extra Time,FOOTBALL_CONCEPT
+shootout,Shootout,FOOTBALL_CONCEPT
+goalkeepers,Goalkeeper,FOOTBALL_CONCEPT
+goalkeeper,Goalkeeper,FOOTBALL_CONCEPT
+keeper,Goalkeeper,FOOTBALL_CONCEPT
