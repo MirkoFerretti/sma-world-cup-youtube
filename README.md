@@ -104,7 +104,7 @@ The main pipeline uses `vaderSentiment` for sentiment, `NRCLex` for the eight-em
 .\.venv\Scripts\python src/analyze_bridges.py
 ```
 
-This step creates `data/processed/bridge_users.csv`, `data/processed/bridge_videos.csv`, `data/processed/bridge_entities.csv`, `outputs/tables/bridge_analysis_summary.csv`, `outputs/figures/bridge_videos.png`, and `outputs/figures/bridge_entities.png`.
+This step creates `data/processed/bridge_users.csv`, `data/processed/bridge_videos.csv`, `data/processed/bridge_entities.csv`, `outputs/tables/bridge_analysis_summary.csv`, `outputs/figures/bridge_videos.png`, and `outputs/figures/bridge_entities.png`. Bridge entities are scored from comment-level normalized entity matches using participation coefficient across all detected communities plus mention support.
 
 Optional detail tables:
 

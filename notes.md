@@ -525,19 +525,37 @@ Bridge users are anonymized users who occupy connecting positions in the main co
 
 The main metric is betweenness centrality. Betweenness centrality is high when a node lies on many shortest paths between other nodes in the graph. In this project, high betweenness suggests cross-community participation or a structurally connecting role between different parts of the repeated co-commenting network.
 
+Bridge-user betweenness is computed as unweighted shortest-path betweenness on the graph after filtering to edges with weight >= 2. This means edge weights are used first to define meaningful repeated co-commenting ties by removing weak one-off links. After that filtering step, betweenness indicates which users occupy brokerage positions between different parts of the retained graph. Using weighted betweenness directly would require extra care because, in this network, larger edge weights indicate stronger ties, while shortest-path algorithms usually interpret larger weights as longer distances. Using unweighted betweenness on the already-thresholded graph is therefore a simple and defensible choice.
+
+The three bridge-user metrics capture different aspects of position within the retained graph. Degree is the number of retained co-commenting neighbors. Weighted degree is the total strength of retained co-commenting ties. Betweenness is interpreted as a structural brokerage position in the retained graph. Edge weights are therefore used to define the graph and to describe tie strength, while betweenness captures brokerage among the retained repeated co-commenting ties.
+
 This does not mean real-world influence, friendship, or opinion leadership. The users remain pseudonymized, and the metric should be interpreted as a structural indicator inside this sampled participation network rather than as evidence of personal influence.
 
 ### Bridge Videos
 
 Bridge videos are videos that attract users from multiple communities. For each video, the script computes the distribution of participating users by community and then summarizes how mixed that participation is.
 
+Bridge videos are computed only from users who successfully join to `data/processed/user_communities.csv`. In practice, this means the bridge-video analysis focuses on the community-assigned subset of the data rather than on every raw commenter in the dataset. This is appropriate because bridges are defined relative to detected communities: a user outside the detected co-commenting community structure cannot indicate whether a video connects `C1`, `C2`, `C3`, and so on.
+
 Videos with higher community diversity and enough participating users receive higher bridge scores. This is important because videos function as shared discussion spaces in the project design. A video can connect narratives even when users do not directly reply to one another.
+
+Bridge analysis is therefore computed on the community-assigned subset of the data because the goal is to identify connections between detected communities, not to describe every raw commenter in the dataset. These bridge-video scores should be interpreted as bridge patterns within the detected community structure, not as statistics over all raw YouTube comments.
 
 ### Bridge Entities
 
-Bridge entities are normalized entities that appear across multiple communities. These may include teams, players, countries, or controversy concepts. Examples in this project could include `VAR`, `Referee`, `Penalty`, `Germany`, `Portugal`, `Croatia`, or `Cristiano Ronaldo`.
+Bridge entities are normalized entities that appear across multiple communities. They may be teams, players, countries, or controversy concepts.
 
-Generic entities such as `World Cup` and `FIFA` may also appear broadly. They are still kept in the data, but they should be interpreted differently from more specific narrative bridges. Broad tournament entities indicate general tournament reference points, while more specific bridge entities help show which actors, teams, or controversy concepts travel across community boundaries.
+Unlike content analysis, where only the six main communities are deeply interpreted, bridge analysis uses all detected communities. This is important because bridges can connect large communities to each other, but they can also connect large communities to smaller peripheral groups.
+
+`data/processed/community_content_summary.csv` remains useful for content analysis and community interpretation. It summarizes terms, entities, sentiment, emotions, and related content-analysis outputs for the main communities, so it helps explain what those communities are about. However, the updated bridge-entity score no longer relies on that compact summary file. Instead, bridge entities are recomputed directly from comment-level data using dictionary-based matching. In this sense, `community_content_summary.csv` is used to interpret communities, while `bridge_entities.csv` is used to identify entities that cross community boundaries. This makes the bridge-entity score independent from the compact content-analysis summary.
+
+The earlier quick version used compact `top_entities` strings from the main communities. That was useful as a first diagnostic, but limited because it did not use the full community distribution of entity mentions and could not distinguish an entity concentrated in one community from an entity spread across many communities.
+
+The updated method works at the comment level across all detected communities. Comments from `data/processed/comments_processed.csv` are linked to community assignments through `author_id`, and entities are extracted with the same normalized dictionary logic used elsewhere in the project: case-insensitive matching, aliases mapped to canonical forms, longer patterns matched before shorter patterns, and no duplicate counting of the same normalized entity within a single comment.
+
+Bridge entities are also computed only from comments whose authors successfully join to `data/processed/user_communities.csv`. This means the bridge-entity analysis is restricted to comments that can be located within the detected co-commenting community structure. This is appropriate because an unmatched comment cannot indicate whether an entity connects detected communities. These bridge-entity scores should therefore be interpreted as bridge patterns within the detected community structure, not as statistics over all raw YouTube comments.
+
+For each normalized entity, the script counts how many comments mention the entity in each community. This gives a full cross-community distribution rather than a compact summary taken only from the main communities. Under the old method, the emphasis was closer to main-community salience because the input was the compact `top_entities` summary. Under the new method, the emphasis is on comment-level cross-community spread across all detected communities, using participation coefficient and comment support. This is why an entity can appear in all six main communities under the new method even if it appeared as a top entity in only two or three main communities under the old method.
 
 ### Metrics
 
@@ -606,13 +624,44 @@ Croatia disallowed goal vs Portugal → 2 main communities
 Panama v England post-match analysis → 2 main communities
 ```
 
-Bridge entities are summarized with the number of communities in which they appear, the number of main communities in which they appear, community entropy when a spread measure can be computed, and a bridge-entity score. When detailed entity counts are available, the score can use both diversity and mention volume. When the compact default community summary is used, the score is interpreted more conservatively as cross-community presence.
+Bridge entities are summarized with the number of communities in which they appear, the number of main communities in which they appear, a participation coefficient, and a bridge-entity score.
 
-The bridge entity score is more conservative than the video score: 
+Here, `main_communities_mentioned_in` means the number of main communities in which the entity appears at least once in matched comments. It does not mean that the entity is one of the top or most salient entities in all of those communities.
 
-bridge_entity_method = compact top_entities presence; score uses detailed mention counts when available, otherwise main-community presence
+The participation coefficient measures whether an entity is concentrated in one community or spread across several communities:
 
-It's basically: "in how many main communities does this entity appear?"
+P(entity) = 1 - sum(p_c^2)
+
+where `p_c` is the share of the entity's comment support in community `c`.
+
+If all mentions are in one community, `P = 0`. If mentions are spread across several communities, `P` is higher. In plain language, a high participation coefficient means the entity crosses community boundaries rather than belonging almost entirely to one community.
+
+The final bridge-entity score is:
+
+bridge_entity_score = participation_coefficient * log1p(total_comments_with_entity)
+
+This combines two ideas:
+
+- the participation coefficient captures cross-community spread;
+- `log1p(total_comments_with_entity)` ensures the entity has enough actual support;
+- the log transformation prevents very frequent entities from dominating only because of raw volume.
+
+Example 1:
+If an entity appears only in `C2`, then its share is 100% in `C2`.
+`P = 1 - 1^2 = 0`.
+It is community-specific, not a bridge.
+
+Example 2:
+If `VAR` appears evenly across `C3`, `C4`, and `C6`, then each community contributes about one third of the entity's mentions.
+`P = 1 - (1/3^2 + 1/3^2 + 1/3^2)`, which is about `0.67`.
+That indicates a stronger bridge entity.
+
+Example 3:
+If an entity appears once in many communities but has very low total support, the participation coefficient may be high, but the final bridge score remains limited because `log1p(total_comments_with_entity)` is still small.
+
+A high bridge-entity score therefore means that an entity is both sufficiently mentioned and distributed across multiple communities. A low score may mean that the entity is rare, or that it is concentrated in one community.
+
+Generic entities such as `World Cup` and `FIFA` may rank as broad contextual bridges. More specific entities such as `VAR`, `Referee`, `Penalty`, `Germany`, `Portugal`, `Croatia`, `Goalkeeper`, or `Cristiano Ronaldo` can act as more concrete narrative bridges. In all cases, entity bridges indicate cross-community mention patterns, not agreement or shared stance.
 
 ### Outputs
 
@@ -656,20 +705,11 @@ So videos become bridges when they combine high-stakes matches, controversy, eli
 
 <br>
 
-Germany and Portugal are the strongest bridge entities, they appear in 3 main communities each. This makes sense because they are both tied to several narratives:
+Under the updated method, the strongest bridge entities are not just the most frequent entities. They are the entities that combine enough comment support with broad distribution across communities. In the current results, `England` is the top bridge entity, followed closely by `Germany`, while `World Cup`, `FIFA`, `Penalty`, `Brazil`, `VAR`, `Cristiano Ronaldo`, `Referee`, and `Portugal` also rank highly.
 
-```
-Germany → elimination, VAR, England/Germany debates, Paraguay upset
-Portugal → Ronaldo, Croatia, penalty/offside controversy
-```
+This is useful because it separates broad contextual bridges from more specific narrative bridges. `World Cup` and `FIFA` function as broad contextual anchors that appear across many communities. By contrast, entities such as `England`, `Germany`, `Penalty`, `VAR`, `Referee`, `Portugal`, and `Croatia` are more concrete narrative bridges because they are tied to match events, controversy, national-team debate, and star-player discussion across several communities.
 
-VAR and Goalkeeper are specific controversy bridges that appear in 2 main communities. 
-
-World Cup and FIFA appear across communities, but they are generic. They indicate shared context, but they are less narratively specific than Germany, Portugal, VAR, or Goalkeepers. 
-
-Cristiano Ronaldo appears in many communities overall, but only 1 main community, so he seems like a community-specific narrative anchor, especially for C2, rather than a bridge across the main communities. 
-
-Not every frequent entity is a bridge. Some entities define one main community strongly rather than connecting several communities. Same for Lionel Messi, Harry Kane, Steve Clarke, and Offside. 
+Not every frequent entity is a bridge. An entity can have many mentions but still be concentrated in one community, which lowers its participation coefficient. Likewise, an entity can appear in many communities but still receive a limited final score if it has very little total comment support.
 
 The top bridge user has 
 
@@ -699,20 +739,21 @@ England post-match analysis/reaction videos
 The strongest bridge entities include 
 
 ```
-Germany
-Portugal
 England
-Croatia
-VAR
-Goalkeeper
+Germany
 World Cup
+FIFA
+Penalty
+VAR
+Portugal
+Croatia
 ```
 
 but the interpretation differs: 
 
 ```
-Germany / Portugal / England / Croatia = team or national narrative bridges
-VAR / Goalkeeper / Referee / Penalty = controversy bridges
+England / Germany / Portugal / Croatia / Brazil = team or national narrative bridges
+VAR / Referee / Penalty / Goalkeeper / Foul = controversy bridges
 World Cup / FIFA = broad contextual bridges
 Cristiano Ronaldo / Messi / Steve Clarke = more community-specific anchors
 ```
@@ -720,6 +761,20 @@ Cristiano Ronaldo / Messi / Steve Clarke = more community-specific anchors
 Unlike content analysis, where small communities were not deeply interpreted because they contain limited semantic evidence, bridge analysis considers all detected communities. This is because bridge objects are interesting precisely when they connect the core communities to the long tail of smaller peripheral groups. 
 
 Bridge analysis was applied to all detected communities, not only the six large ones. This is useful because bridges can connect major narrative communities to each other, but they can also connect the core discussion space to smaller peripheral clusters. The top bridge videos therefore reveal two patterns: some videos, such as Germany elimination or VAR controversy videos, connect multiple main communities; others connect one or two main communities with many small communities, acting as broader discussion hubs in the long tail of the network.
+
+These methodological choices are scope choices rather than bugs or inconsistencies. `community_content_summary.csv` is not used for bridge-entity scoring because bridge entities now rely on direct comment-level matching. Bridge videos and bridge entities are computed only on the community-assigned subset because the analysis concerns bridges between detected communities. Unweighted betweenness on the weight >= 2 graph is also intentional because edge weights are already used for graph definition and weighted degree is reported separately.
+
+### Why Participation Coefficient for Entities and Entropy for Videos is not Inconsistent
+
+They have similar intuition, but they are being used in slightly different contexts. 
+
+For bridge entities, the question is: "Is this entity's comment support concentrated in one community, or spread across communities?". Participation coefficient is natural here because it measures whether something crosses community boundaries. 
+
+For bridge videos, the question is: "Is this video's audience/community participation diverse and balanced?". Entropy is good here cause it's a diversity/evenness measure. 
+
+We could also use participation coefficient for videos too, and it would give similar intuition. 
+
+The only caveat is the entropy is normalized by the number of represented communities. That means a video evenly split between 2 communities and a video evenly split between 8 communities can both have entropy close to 1. This is somewhat fixed by the log1p(total community users) in the formula. So the final idea is that, among videos with community participation, prioritize videos with balanced community participation and enough users. 
 
 ### Caveats
 
