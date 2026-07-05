@@ -5,7 +5,9 @@ venv/
 
 # Python cache and build artifacts
 __pycache__/
-*.py[cod]
+*.pyc
+*.pyo
+*.pyd
 build/
 dist/
 *.egg-info/
@@ -17,29 +19,34 @@ dist/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.agents/
 
 # Logs and local databases
 *.log
 *.db
 *.sqlite
 
-# Raw and generated data
+# Raw data kept out of Git
 data/raw/*
-data/processed/*
-data/final/*
-outputs/figures/*
-outputs/tables/*
-outputs/networks/*
 
 # Keep placeholders
 !data/raw/.gitkeep
-!data/processed/.gitkeep
-!data/final/.gitkeep
-!outputs/figures/.gitkeep
-!outputs/tables/.gitkeep
-!outputs/networks/.gitkeep
 !metadata/.gitkeep
-!report/.gitkeep
 
-# Agents.md
-AGENTS.md
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+~$*
+
+# OS and editor clutter
+.DS_Store
+Thumbs.db
+Desktop.ini
+.vscode/
+.idea/
+
+data/processed/user_network_edges.csv

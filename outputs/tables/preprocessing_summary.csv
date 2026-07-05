@@ -1,0 +1,24 @@
+metric,value
+raw_comments,22594
+duplicate_comment_ids_before_dedup,0
+duplicate_comments_removed,0
+empty_comments_removed,0
+short_comments_removed,1869
+non_english_comments_removed,1573
+processed_comments,19152
+unique_users_processed,16505
+unique_videos_processed,134
+users_with_1_video_raw,17812
+users_with_at_least_2_videos_raw,1441
+users_with_at_least_3_videos_raw,382
+eligible_videos_with_comments,134
+eligible_videos_without_comments,0
+min_comments_per_video_raw,37
+mean_comments_per_video_raw,168.61
+max_comments_per_video_raw,200
+min_text_length_processed,15
+mean_text_length_processed,113.75
+max_text_length_processed,5300
+comments_by_primary_category_processed,"{""match_highlights"": 5163, ""post_match_reactions"": 4162, ""star_player_legacy"": 2244, ""tactical_blame_rivalry"": 2644, ""upsets_underdogs"": 1713, ""var_referee_controversies"": 3226}"
+comments_by_video_context_type_processed,"{""group_draw_roster"": 533, ""match_highlights"": 5682, ""other_world_cup_discussion"": 3187, ""post_match_reaction"": 1344, ""preview_background"": 136, ""star_player_legacy"": 2515, ""tactical_analysis"": 1065, ""upset_underdog"": 1695, ""var_referee_controversy"": 2995}"
+warnings,

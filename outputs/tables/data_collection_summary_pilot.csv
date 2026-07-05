@@ -1,0 +1,15 @@
+metric,value
+total_candidate_videos,333
+eligible_videos,134
+excluded_videos,199
+comments_collected,22594
+unique_commenters,19253
+videos_with_comments_collected,134
+users_with_at_least_2_videos,1441
+users_with_at_least_3_videos,382
+min_comments_per_video,37
+mean_comments_per_video,168.61
+max_comments_per_video,200
+eligible_by_primary_category,"{""match_highlights"": 37, ""post_match_reactions"": 29, ""star_player_legacy"": 16, ""tactical_blame_rivalry"": 17, ""upsets_underdogs"": 14, ""var_referee_controversies"": 21}"
+eligible_by_video_context_type,"{""group_draw_roster"": 4, ""match_highlights"": 40, ""other_world_cup_discussion"": 21, ""post_match_reaction"": 9, ""preview_background"": 1, ""star_player_legacy"": 18, ""tactical_analysis"": 8, ""upset_underdog"": 13, ""var_referee_controversy"": 20}"
+excluded_by_reason,"{""below_min_comments"": 116, ""clearly_non_english"": 5, ""irrelevant_gaming_or_betting"": 5, ""likely_short"": 73}"

@@ -10,6 +10,20 @@ This project studies narrative communities in FIFA World Cup 2026 YouTube commen
 2. Which narratives dominate detected communities, and how are they expressed through entities, keywords, sentiment, and emotions?
 3. Which users, videos, matches, teams, players, or controversy-related entities bridge different narrative communities?
 
+## Project Status / Reproducibility Note
+
+The collected YouTube dataset is now frozen for this project. The later scripts operate on this frozen dataset and its derived outputs rather than on a live, constantly changing YouTube sample.
+
+Do not rerun:
+
+- `python src/collect_youtube.py discover`
+- `python src/collect_youtube.py filter-eligible`
+- `python src/collect_youtube.py collect`
+
+unless you intentionally want to restart the collection process. YouTube search results, metadata, and comments can change over time, so rerunning collection would likely change the sample and would require rerunning preprocessing, network construction, community detection, content analysis, and bridge analysis.
+
+The project should now focus on interpretation, report writing, and presentation using the existing frozen dataset and analysis outputs.
+
 ## Data Collection Process
 
 The collection pipeline has three steps.
@@ -19,6 +33,24 @@ The collection pipeline has three steps.
 3. Comment collection: the script collects capped top-level comments only from rows marked `eligible`.
 
 This design is simple enough for a short presentation, but still reproducible and defensible. It captures multiple World Cup discussion spaces instead of depending on one narrow search phrase.
+
+The project does not try to collect every World Cup video. It uses query groups to build a balanced corpus of different narrative contexts: highlights, reactions, controversies, upsets, star-player debates, and tactical/rivalry discussions. 
+
+The project studies narrative communities, so the dataset needs to include different kinds of situations where narratives are likely to emerge: match events, post-match reactions, controversies, underdog stories, star-player debate, tactical criticism, and blame. 
+
+Match highlights capture broad, high-visibility match discussions. These videos are useful because they attract general tournament audiences and give us a baseline of participation around concrete matches. 
+
+Post match reactions capture pundit, fan, and media reactions after matches, which can be important for interpretation, praise, criticism, blame, and debate. 
+
+Upsets underdogs capture unexpected results, smaller teams, and surprise performances. They are useful because upset narratives generate surprise, national pride, disappointment, and cross-community attention. 
+
+VAR-referee controversies capture disputed calld, VAR decisions, penalties, offside decisions, disallowed goals, and criticism. Controversy often creates emotionally intense discussion and can attract users from different narrative communities. 
+
+Start player-related queries capture debates around major players and other star figures, which can often cut across teams, countries, and fan communities. 
+
+The blame and tactical query captures tactical analysis, manager criticism, rivalry narratives, national-team failrue, and blame attribution. 
+
+The design is narrative-oriented, it is meant to cover several types of World Cup discussion spaces rather than only one type of content. This makes the process systematic and transparent, but not statistically representative of all YouTube discussion around the World Cup. YouTube search is platform-mediated, so the discovered videos depend on YouTube's ranking algorithm, metadata, timing, and exact query wording. 
 
 ## Output Files
 
@@ -90,9 +122,9 @@ This is a deliberate simplification:
 
 Before preprocessing, the script runs quick checks on video and comment counts, duplicate IDs, user overlap across videos, category and context balance, and video language metadata.
 
-Raw comments are deduplicated by `comment_id`. The script preserves `original_text` for possible qualitative inspection and creates a lightly cleaned `clean_text` by decoding HTML entities, removing URLs, replacing line breaks, collapsing whitespace, and stripping the final text. Punctuation, capitalization, and negation are kept.
+Raw comments are deduplicated by `comment_id`. The script preserves `original_text` for possible qualitative inspection and creates a lightly cleaned `clean_text` by decoding HTML entities, removing URLs, replacing line breaks, collapsing whitespace, and stripping the final text. Punctuation, capitalization, and negation are kept because they will be used for sentiment analysis using VADER. 
 
-Very short comments are removed with `min_chars = 15` because they usually add little semantic information. Likely non-English comments are also removed because the later text-analysis tools are English-oriented. This language filter is a rule-based heuristic, not a full language-detection model: it uses ASCII or Latin-letter ratio, common English function words, football terms, and token count. It is transparent but imperfect.
+Very short comments are removed with `min_chars = 15` because they usually add little semantic information. Likely non-English comments are also removed because the later text-analysis tools are English-oriented. VADER, English TF-IDF stopword handling, spaCy's English model, and NRCLex are all more appropriate for english text. This language filter is a rule-based heuristic, not a full language-detection model: it uses ASCII or Latin-letter ratio, common English function words, football terms, and token count. It is transparent but imperfect.
 
 Users are pseudonymized with a stable hashed `author_id`. The same YouTube channel always maps to the same anonymous ID, which preserves repeat participation for later network analysis without using raw usernames or channel IDs in the processed dataset.
 
@@ -104,28 +136,64 @@ Current preprocessing result:
 - 19,152 processed comments
 - 16,505 processed users
 - 134 processed videos
-- 1,207 users with at least 2 videos
-- 298 users with at least 3 videos
+- 1,869 short comments removed
+- 1,573 likely non-English comments removed
+- 1,441 raw users with at least 2 videos
+- 382 raw users with at least 3 videos
+- 134 eligible videos with comments
+- 0 eligible videos without comments
 
 The repeat-user count is sufficient to proceed with the user-video and user-user co-commenting network construction.
 
+The preprocessing step prepared the collected YouTube comments for network and content analysis while keeping the text as close as possible to the original comments. Before applying any cleaning, we run basic checks on the collected dataset, including the number of videos and comments, duplicate IDs, user overlap across videos, category and context balance, and video-level language metadata. 
+
+Preprocessing is intentionally light. Cleaning only removes obvious noise: HTML entities are encoded, URLs are removed, line breaks are replaced, repeated whitespace is collapsed, and leading/trailing whitespace is stripped. 
+
+We don't remove punctuation, stop words, lemmatize words, or lowercase the text because later methods such as VADER can use punctuation, capitalization, negation, and emphasis as meaningful signals. 
+
+
+
 ## Network Construction
 
-The network step builds two related participation structures from `data/processed/comments_processed.csv`.
+### Objective
 
-The user-video network is the direct bipartite participation structure in the data. One edge means an anonymized user commented on a specific video discussion space. This tells us where participation happened before any projection or community detection.
+The purpose of the network step is to move from individual comments to participation structures. The raw data is comment-level: an anonymized user commented on a video. Network construction makes that participation structure explicit and prepares the data for community detection.
 
-The user-user co-commenting network is a projection of that bipartite structure. Two users are connected when they both commented on at least one of the same videos. The edge weight is the number of shared videos. This is shared participation, not direct interaction, friendship, agreement, or reply behavior.
+### User-Video Network
 
-This is the most defensible network representation for the project because we do not have follower or friendship data, and we collected top-level comments rather than full reply conversations. Co-commenting therefore captures repeated presence in the same World Cup discussion spaces without overstating what the data can show.
+The first structure is a user-video network. This is a bipartite network, meaning it contains two different types of nodes: users and videos. An edge means that an anonymized user commented on a specific video.
 
-Edge-weight thresholds are diagnostic at this stage:
+In simple terms, a video is treated as a discussion space, and a user-video edge means that the user entered that discussion space by commenting. This is the direct participation structure in the data before users are projected onto one another.
 
-- weight >= 1 is broad and inclusive but may contain many one-off overlaps from popular videos
-- weight >= 2 captures stronger repeated co-participation
-- weight >= 3 is stricter and useful as a robustness check, but it may remove many users
+### User-User Co-Commenting Network
 
-The goal of this step is not final interpretation yet. It only builds the networks and compares threshold diagnostics so we can later choose a suitable community-detection input.
+The second structure is a user-user co-commenting network created by projecting the user-video network. Two users are connected if they commented on at least one same video. The edge weight is the number of videos they both commented on:
+
+- weight = 1 means they shared one video discussion
+- weight = 2 means they shared two video discussions
+- weight = 3 means they shared three video discussions
+
+This is shared participation, not direct interaction. The network captures repeated presence in the same World Cup discussion spaces, not direct communication, friendship, agreement, replies, or conversation between users.
+
+### Why This Network Is Defensible
+
+This representation is the most defensible choice for the project because the dataset does not include follower or friendship data, and the collection step captured top-level comments rather than full reply conversations. Co-commenting therefore fits the research goal well: the project studies shared participation in World Cup narrative spaces rather than interpersonal ties.
+
+### Edge Weight Thresholds
+
+Edge-weight thresholds are used to filter edges, not users directly. A user who comments on two videos does not automatically remain in the weight >= 2 network. To remain in that thresholded graph, the user must share at least two of the same videos with at least one other user. This is why the weight >= 2 graph contains far fewer users than the broader preflight count of repeat commenters.
+
+The threshold comparison suggests three different trade-offs:
+
+- weight >= 1 keeps all one-off overlaps. It retained 16,505 nodes and 1,395,315 edges, formed one giant component, and had an average degree of about 169 with a median degree of 171. This suggests that the graph is dominated by weak one-off overlaps from popular videos.
+- weight >= 2 requires repeated co-participation. It retained 931 users and 4,133 edges, with 58 connected components and a largest component of 721 users, or 77.44% of the graph. The average degree was about 8.88, the median degree was 5, and the maximum degree was 228. This produces a much cleaner graph while still preserving enough structure for interpretation.
+- weight >= 3 is stricter. It retained only 160 users and 687 edges, with 12 connected components and a largest component of 107 users, or 66.87% of the graph. This makes it useful as a robustness check, but too restrictive for the main analysis.
+
+### Resulting Choice
+
+Weight >= 2 was selected as the main graph for community detection because it balances noise reduction, repeated co-participation, and sufficient network size. It removes much of the weak overlap that dominates the weight >= 1 graph without shrinking the network as severely as the weight >= 3 alternative.
+
+### Outputs
 
 Outputs from this step:
 
@@ -136,38 +204,76 @@ Outputs from this step:
 - `outputs/figures/user_participation_distribution.png`
 - `outputs/figures/network_threshold_diagnostics.png`
 
+### Caveats
+
+- Co-commenting is not direct interaction.
+- High degree does not necessarily mean influence.
+- Large popular videos can create many weak edges.
+- Network results depend on the sampled videos and the comment cap.
+- The threshold choice is methodological and should be justified rather than treated as objectively perfect.
+
 ## Community Detection
+
+### Objective
+
+After building the user-user co-commenting network, community detection identifies groups of users who are more densely connected to one another than to the rest of the graph. In this project, those groups are interpreted as participation communities. The goal is to identify clusters of users who repeatedly appear in similar World Cup video discussion spaces.
 
 ### Methodology
 
-Community detection is run after constructing the user-user co-commenting network. The main graph uses edge weight >= 2, where edge weight means the number of videos two users both commented on. In practice, weight >= 2 means two anonymized users shared at least two World Cup video discussion spaces. This threshold was chosen because weight >= 1 was too noisy, while weight >= 3 retained too few users.
+The main graph uses edge weight >= 2. Louvain community detection is applied to this weighted graph. Louvain is a community-detection method that searches for partitions in which connections are denser within groups than between groups.
 
-Louvain community detection is then applied to the weighted graph. Louvain groups users whose repeated co-commenting connections are denser within the group than outside it.
+Edge weights are kept in the model so that stronger repeated co-participation matters more than weaker links. Communities are labelled `C1`, `C2`, `C3`, and so on by size for readability, where `C1` is the largest community. These are display labels, not inherent community names. The narrative meaning of each community is interpreted later using video metadata and content analysis.
 
 ### Interpretation
 
-The detected groups are participation communities. They represent anonymized users who repeatedly appear in similar World Cup video discussion spaces. They do not represent friendship, direct replies, agreement, or support for the same team. Communities are first profiled with video metadata before any text analysis.
+A community in this project means a group of anonymized users with similar participation patterns. It does not mean that users are friends, agree with one another, reply to one another, or support the same team. It means that they repeatedly participate in overlapping World Cup discussion spaces.
+
+The network gives the structure; video metadata and comment content give the meaning.
 
 ### Results
 
-The current main graph contains 931 users and 4,133 repeated co-commenting edges. Louvain detects 71 communities with modularity = 0.5505. The largest community contains 273 users and the median community size is 2. There are 64 communities with fewer than 10 users, while 6 communities have at least 20 users. Those 6 larger communities cover 76.37% of users in the main graph.
+The main graph contains 931 users and 4,133 repeated co-commenting edges. Louvain detects 71 communities with modularity = 0.5505. The largest community contains 273 users and the median community size is 2 users. There are 64 communities with fewer than 10 users, while 6 communities have at least 20 users. Those 6 larger communities cover 76.37% of users in the main graph.
+
+Modularity is a summary measure of how clearly the network separates into communities. A value of 0.5505 suggests a meaningful community structure rather than a completely random grouping, although it should not be treated as proof that the partition is uniquely correct.
+
+### Long-Tail Community Structure
+
+The community size distribution has a clear long-tail pattern. A few large communities contain most of the interpretable structure, while many small communities are peripheral. This supports focusing the later content analysis on the six communities with at least 20 users: `C1` with 273 users, `C2` with 194, `C3` with 141, `C4` with 46, `C5` with 35, and `C6` with 22.
+
+The figure `community_size_long_tail.png` makes this structure visible and helps show why the large communities receive the most detailed later interpretation.
+
+### Community Profiles From Video Metadata
+
+Before any text analysis, the communities were profiled using video metadata, including primary sampling category, video context type, top videos, and top channels. These metadata profiles already suggest that different communities are associated with different kinds of discussion spaces.
+
+- `C1` is strongly associated with match highlights and appears to represent a broad match-highlights or general tournament viewing community.
+- `C2` is associated with post-match reactions and star-player legacy contexts, suggesting a post-match debate or star-player discussion space.
+- `C3` is strongly associated with VAR or referee controversy, suggesting a controversy-oriented community.
+- `C4` appears more mixed, with VAR or referee controversy, post-match reaction, and other World Cup discussion elements.
+- `C5` is strongly associated with tactical analysis and tactical blame or rivalry contexts, suggesting a manager or tactical criticism community.
+- `C6` is also heavily associated with VAR or referee controversy, suggesting another controversy-oriented community, possibly linked to a different controversy or match context.
+
+These are preliminary interpretations based on video metadata. Later content analysis is used to validate and refine them.
+
+### Network Visualizations
+
+The full community network overview shows the largest connected component of the weight >= 2 graph. Nodes are users, edges are repeated co-commenting links, and colors show the main communities. Small communities are shown in gray. The highlighted `C1` to `C5` figures show where each large community sits inside the same overall layout.
+
+The layout is force-directed and illustrative. Spatial positions should not be overinterpreted as exact distances. The value of these visualizations is that they show separation and overlap between participation communities, not that they provide a literal map of social distance.
 
 ### Insights
 
-The community structure has a clear long tail. A few larger communities contain most of the interpretable structure, while many small communities are peripheral and should not be deeply interpreted. The six larger communities are therefore the main focus for later content analysis.
+The community structure is not homogeneous. The network separates into several large participation communities plus many smaller peripheral groups. This already suggests that World Cup YouTube discussion is structured rather than fully diffuse.
 
-The preliminary video-metadata profiles already suggest different discussion spaces, including match highlights, post-match reactions, VAR or referee controversy, star-player debate, and tactical blame. Later content analysis will validate and refine these tentative labels.
+The six larger communities contain most of the interpretable structure and are therefore the main focus for later content analysis.
 
-### Figures
+The preliminary video profiles already suggest different discussion spaces, including match highlights, post-match or star-player debate, VAR or referee controversy, tactical blame, and mixed national-team debate. These metadata-based patterns provide an early answer to RQ1 before the comments themselves are analyzed in depth.
 
-- `community_size_distribution.png` shows the top communities plus the grouped long tail
-- `community_size_long_tail.png` shows all detected communities and makes the long-tail structure visible
-- `community_context_profile.png` shows video-context composition of the main communities
-- `community_category_profile.png` shows sampling-category composition of the main communities
-- `community_network_overview.png` provides an illustrative view of the main graph
-- `community_highlight_C1.png` to `community_highlight_C5.png` highlight the five largest communities inside the same network layout
+The network visualization also suggests that some communities are more compact, while others appear positioned closer to other groups. This does not prove bridging by itself, but it prepares the ground for the later bridge analysis.
 
-Network layout positions in the overview and highlight figures are visual aids only and should not be overinterpreted as exact distances.
+Community detection therefore helps answer RQ1 by showing that World Cup YouTube discussions form detectable participation communities based on repeated co-commenting patterns.
+
+### Outputs
 
 Outputs from this step:
 
@@ -185,6 +291,15 @@ Outputs from this step:
 - `outputs/figures/community_highlight_C3.png`
 - `outputs/figures/community_highlight_C4.png`
 - `outputs/figures/community_highlight_C5.png`
+
+### Caveats
+
+- Communities are participation communities, not friendship groups.
+- Community detection depends on the edge threshold.
+- Louvain is heuristic, so the result should be interpreted as useful structure rather than the only possible partition.
+- Small communities are not deeply interpreted because they contain limited evidence.
+- Video metadata profiles are preliminary; content analysis is needed for narrative labels.
+- Network layout positions are illustrative and should not be overinterpreted.
 
 ## Content Analysis
 
@@ -397,6 +512,222 @@ C6 has: foul, robbed, var, germany, right -- Germany, VAR, Goalkeeper, Foul, Por
 The communities are not just different in tone, they are organized around different narrative anchors. 
 
 Representative comments were used as a qualitative validation step. 
+
+## Bridge Analysis
+
+### Objective
+
+Bridge analysis addresses RQ3: "Which users, videos, matches, teams, players, or controversy-related entities bridge different narrative communities?" After identifying participation communities and profiling their content, the next step is to look for users, videos, and entities that connect multiple communities. This helps explain not only how discussion spaces separate, but also what links them across the sampled World Cup YouTube corpus.
+
+### Bridge Users
+
+Bridge users are anonymized users who occupy connecting positions in the main co-commenting network. This analysis uses the same main graph as community detection, with edge weight >= 2, so the bridge results stay aligned with the threshold used for the main participation structure.
+
+The main metric is betweenness centrality. Betweenness centrality is high when a node lies on many shortest paths between other nodes in the graph. In this project, high betweenness suggests cross-community participation or a structurally connecting role between different parts of the repeated co-commenting network.
+
+This does not mean real-world influence, friendship, or opinion leadership. The users remain pseudonymized, and the metric should be interpreted as a structural indicator inside this sampled participation network rather than as evidence of personal influence.
+
+### Bridge Videos
+
+Bridge videos are videos that attract users from multiple communities. For each video, the script computes the distribution of participating users by community and then summarizes how mixed that participation is.
+
+Videos with higher community diversity and enough participating users receive higher bridge scores. This is important because videos function as shared discussion spaces in the project design. A video can connect narratives even when users do not directly reply to one another.
+
+### Bridge Entities
+
+Bridge entities are normalized entities that appear across multiple communities. These may include teams, players, countries, or controversy concepts. Examples in this project could include `VAR`, `Referee`, `Penalty`, `Germany`, `Portugal`, `Croatia`, or `Cristiano Ronaldo`.
+
+Generic entities such as `World Cup` and `FIFA` may also appear broadly. They are still kept in the data, but they should be interpreted differently from more specific narrative bridges. Broad tournament entities indicate general tournament reference points, while more specific bridge entities help show which actors, teams, or controversy concepts travel across community boundaries.
+
+### Metrics
+
+Bridge users are summarized with betweenness centrality together with degree and weighted degree on the thresholded co-commenting graph.
+
+Bridge videos are summarized with the number of communities represented, the number of main communities represented, the dominant community share, community entropy, and a bridge-video score. Entropy is used here as a simple diversity measure: high entropy means participation is spread more evenly across communities, while low entropy means one community dominates. The bridge-video score combines that diversity signal with the total number of participating community users so that a bridge video should be both mixed and substantively attended.
+
+bridge_video_score = normalized community entropy * log1p(total community users on video)
+
+A video gets a high bridge score if its commenters come from several different communities and if enough community users commented on it. So it rewards both diversity across communities and enough participation volume. 
+
+For each video, look at the communities of the users who commented on that video:
+
+```
+Video A:
+C1: 30 users
+C2: 10 users
+C3: 10 users
+Total = 50 community users
+```
+
+Then it computes the distribution:
+
+```
+C1 = 60%
+C2 = 20%
+C3 = 20%
+```
+
+A video is more bridging when the users are spread across several communities instead of coming almost entirely from one community. So we use the community entropy, which is just a diversity score:
+
+```
+C1 = 95%
+C2 = 5%
+```
+
+This means one community dominates. Not much of a bridge.
+
+High entropy would be:
+
+```
+C1 = 35%
+C2 = 30%
+C3 = 20%
+C4 = 15%
+```
+
+This means several communities are participating, which is more bridge-like. We use normalized entropy, so it's between 0 and 1, where 0 means that one community dominates completely, and 1 means that participation is evenly spread across represented communities. 
+
+The log(1 + total community users on the video) is the second metric. A video with 3 users from 3 communities is diverse, but not very important. A video with 40 users from several communities is more meaningful. But we use the log instead of raw user count cause, otherwise, large videos would dominate too much. 
+
+And the final formula is:
+
+bridge_video_score = community_entropy * log1p(total_community_users)
+
+A problem is that some top bridge videos are dominated by small communities. For example, the top bridge video is the "REACTION to Carlos Queiroz and Jose Mourinho criticizing the 48-team World Cup format", which has 8 communities represented, and the main community represented is 1. So technically it is a bridge video because it attracts many different communities, but most of those are small peripheral communities, not the main C1-C6 communities. It's not wrong, but for the report it may be less interesting than videos that connect multiple main communities (i would keep it though, we'll just include other top bridges too for the report). 
+
+Other relevant ones are:
+
+```
+Germany dumped out by Paraguay → 5 main communities
+Germany and Netherlands knocked out → 4 main communities
+VAR is trash / Germany robbed → 3 main communities
+Klinsmann slams Germany elimination → 3 main communities
+Croatia disallowed goal vs Portugal → 2 main communities
+Panama v England post-match analysis → 2 main communities
+```
+
+Bridge entities are summarized with the number of communities in which they appear, the number of main communities in which they appear, community entropy when a spread measure can be computed, and a bridge-entity score. When detailed entity counts are available, the score can use both diversity and mention volume. When the compact default community summary is used, the score is interpreted more conservatively as cross-community presence.
+
+The bridge entity score is more conservative than the video score: 
+
+bridge_entity_method = compact top_entities presence; score uses detailed mention counts when available, otherwise main-community presence
+
+It's basically: "in how many main communities does this entity appear?"
+
+### Outputs
+
+- `data/processed/bridge_users.csv`
+- `data/processed/bridge_videos.csv`
+- `data/processed/bridge_entities.csv`
+- `outputs/tables/bridge_analysis_summary.csv`
+- `outputs/figures/bridge_videos.png`
+- `outputs/figures/bridge_entities.png`
+
+### Insights
+
+The bridge videos suggest something very interesting: cross-community bridging is mainly created by controversy, elimination, and pundit-reaction videos. The strongest examples are the ones for the Germany/Paraguay elimination, like "TRAVESTY! Germany dumped out by Paraguay", which connects communities:
+
+```
+C4:13
+C2:4
+C5:4
+C1:3
+C6:1
+plus smaller communities
+```
+
+Germany's elimination appears to be a cross-community discussion event, attracting not just the Germany/VAR community but also the post-match debate, tactical blame, highlights, and controversy-oriented users. 
+
+"VAR is TRASH. Germany robbed!!!" connects C6:11, C4:7, C2:4 and is a very clean bridge between controversy communities. VAR/referee controversy around Germany acts as a connection between multiple narrative communities. 
+
+"HEARTBREAK! Croatia fans react to late disallowed goal vs. Portugal" connects C2:30 and C3:10. The Portugal-Croatia disallowed goal links the post-match/star-player debate community with the VAR/offside controversy community. 
+
+Videos like:
+
+```
+Panama v England post-match analysis
+England v DR Congo post-match
+Simon Jordan attacks England players
+```
+
+connect multiple communities, usually C2/C4 and some smaller groups. Pundit-reaction videos about England act as shared discussion spaces across otherwise separate communities. 
+
+So videos become bridges when they combine high-stakes matches, controversy, elimination, or pundit debate. 
+
+<br>
+
+Germany and Portugal are the strongest bridge entities, they appear in 3 main communities each. This makes sense because they are both tied to several narratives:
+
+```
+Germany → elimination, VAR, England/Germany debates, Paraguay upset
+Portugal → Ronaldo, Croatia, penalty/offside controversy
+```
+
+VAR and Goalkeeper are specific controversy bridges that appear in 2 main communities. 
+
+World Cup and FIFA appear across communities, but they are generic. They indicate shared context, but they are less narratively specific than Germany, Portugal, VAR, or Goalkeepers. 
+
+Cristiano Ronaldo appears in many communities overall, but only 1 main community, so he seems like a community-specific narrative anchor, especially for C2, rather than a bridge across the main communities. 
+
+Not every frequent entity is a bridge. Some entities define one main community strongly rather than connecting several communities. Same for Lionel Messi, Harry Kane, Steve Clarke, and Offside. 
+
+The top bridge user has 
+
+```
+community = C3
+degree = 44
+weighted_degree = 94
+betweenness = 0.2519
+videos_commented = 9
+```
+
+Which means that this anonymized user sits in a structurally connecting position inside the co-commenting graph. Bridge users identify cross-community participation patterns but because users are anonymized and we do not observe direct interaction, they should be interpreted as structural connectors only. 
+
+<br>
+
+Bridge users are a small set of anonymized users that occupy high-betweenness positions in the repeated co-commenting network, meaning they structurally connect otherwise separated participation communities. 
+
+The strongest interpretable bridge videos are reaction/controversy videos, especially:
+
+```
+Germany dumped out by Paraguay
+Germany robbed / VAR is trash
+Croatia disallowed goal vs Portugal
+England post-match analysis/reaction videos
+```
+
+The strongest bridge entities include 
+
+```
+Germany
+Portugal
+England
+Croatia
+VAR
+Goalkeeper
+World Cup
+```
+
+but the interpretation differs: 
+
+```
+Germany / Portugal / England / Croatia = team or national narrative bridges
+VAR / Goalkeeper / Referee / Penalty = controversy bridges
+World Cup / FIFA = broad contextual bridges
+Cristiano Ronaldo / Messi / Steve Clarke = more community-specific anchors
+```
+
+Unlike content analysis, where small communities were not deeply interpreted because they contain limited semantic evidence, bridge analysis considers all detected communities. This is because bridge objects are interesting precisely when they connect the core communities to the long tail of smaller peripheral groups. 
+
+Bridge analysis was applied to all detected communities, not only the six large ones. This is useful because bridges can connect major narrative communities to each other, but they can also connect the core discussion space to smaller peripheral clusters. The top bridge videos therefore reveal two patterns: some videos, such as Germany elimination or VAR controversy videos, connect multiple main communities; others connect one or two main communities with many small communities, acting as broader discussion hubs in the long tail of the network.
+
+### Caveats
+
+- Bridge users are structural connectors, not necessarily influencers.
+- Bridge videos represent shared participation spaces, not direct user interaction.
+- Bridge entities show cross-community mentions, not shared stance or agreement.
+- Results depend on the sampled YouTube videos, the English-focused comment corpus, entity normalization choices, and the chosen weight >= 2 network threshold.
+- Bridge analysis should be interpreted together with community detection and content analysis rather than as a standalone final explanation.
 
 ## Later Analysis Plan
 

@@ -1,0 +1,144 @@
+normalized_entity,entity_type,total_mentions,communities_mentioned_in,main_communities_mentioned_in,dominant_community,dominant_community_share,community_entropy,bridge_entity_score,community_mix,bridge_entity_rank
+Germany,TEAM_OR_COUNTRY,16,16,3,C14,0.0625,1.0,3.0,C2:1; C4:1; C6:1; C14:1; C17:1; C20:1; C22:1; C23:1; C28:1; C33:1; C35:1; C40:1; C58:1; C60:1; C62:1; C64:1,1
+Portugal,TEAM_OR_COUNTRY,10,10,3,C2,0.1,1.0,3.0,C2:1; C3:1; C6:1; C20:1; C24:1; C26:1; C38:1; C52:1; C58:1; C70:1,2
+England,TEAM_OR_COUNTRY,22,22,2,C15,0.0455,1.0,2.0,C2:1; C4:1; C9:1; C15:1; C17:1; C22:1; C28:1; C31:1; C34:1; C36:1; C40:1; C42:1; C43:1; C44:1; C47:1; C51:1; C57:1; C58:1; C59:1; C61:1; C64:1; C66:1,3
+Brazil,TEAM_OR_COUNTRY,15,15,2,C1,0.0667,1.0,2.0,C1:1; C5:1; C7:1; C9:1; C13:1; C17:1; C30:1; C31:1; C40:1; C46:1; C47:1; C49:1; C50:1; C52:1; C55:1,4
+Croatia,TEAM_OR_COUNTRY,13,13,2,C14,0.0769,1.0,2.0,C2:1; C3:1; C14:1; C27:1; C35:1; C37:1; C38:1; C53:1; C59:1; C61:1; C65:1; C70:1; C71:1,5
+World Cup,COMPETITION,13,13,2,C1,0.0769,1.0,2.0,C1:1; C5:1; C8:1; C10:1; C12:1; C17:1; C18:1; C22:1; C23:1; C29:1; C37:1; C49:1; C70:1,6
+VAR,REFEREE_VAR_CONCEPT,6,6,2,C27,0.1667,1.0,2.0,C4:1; C6:1; C7:1; C27:1; C50:1; C71:1,7
+Goalkeeper,FOOTBALL_CONCEPT,5,5,2,C11,0.2,1.0,2.0,C4:1; C6:1; C11:1; C14:1; C28:1,8
+Cristiano Ronaldo,PLAYER_OR_MANAGER,12,12,1,C2,0.0833,1.0,1.0,C2:1; C24:1; C25:1; C26:1; C37:1; C38:1; C46:1; C53:1; C56:1; C58:1; C70:1; C71:1,9
+FIFA,ORG,12,12,1,C16,0.0833,1.0,1.0,C3:1; C16:1; C32:1; C35:1; C37:1; C46:1; C48:1; C50:1; C54:1; C57:1; C59:1; C69:1,10
+Japan,TEAM_OR_COUNTRY,10,10,1,C1,0.1,1.0,1.0,C1:1; C11:1; C15:1; C21:1; C29:1; C30:1; C49:1; C54:1; C67:1; C68:1,11
+Harry Kane,PLAYER_OR_MANAGER,7,7,1,C12,0.1429,1.0,1.0,C4:1; C12:1; C31:1; C44:1; C51:1; C53:1; C64:1,12
+Lionel Messi,PLAYER_OR_MANAGER,7,7,1,C1,0.1429,1.0,1.0,C1:1; C12:1; C19:1; C25:1; C31:1; C59:1; C61:1,13
+Foul,REFEREE_VAR_CONCEPT,6,6,1,C19,0.1667,1.0,1.0,C6:1; C19:1; C39:1; C48:1; C60:1; C61:1,14
+Referee,REFEREE_VAR_CONCEPT,6,6,1,C16,0.1667,1.0,1.0,C3:1; C7:1; C16:1; C29:1; C32:1; C48:1,15
+Scotland,TEAM_OR_COUNTRY,4,4,1,C15,0.25,1.0,1.0,C5:1; C9:1; C15:1; C17:1,16
+Offside,REFEREE_VAR_CONCEPT,3,3,1,C3,0.3333,1.0,1.0,C3:1; C39:1; C71:1,17
+Haiti,unknown,2,2,1,C31,0.5,1.0,1.0,C5:1; C31:1,18
+Steve Clarke,PLAYER_OR_MANAGER,2,2,1,C26,0.5,1.0,1.0,C5:1; C26:1,19
+Norway,TEAM_OR_COUNTRY,1,1,1,C1,1.0,0.0,1.0,C1:1,20
+Argentina,TEAM_OR_COUNTRY,7,7,0,C15,0.1429,1.0,0.0,C8:1; C9:1; C15:1; C21:1; C24:1; C38:1; C52:1,21
+Penalty,REFEREE_VAR_CONCEPT,7,7,0,C14,0.1429,1.0,0.0,C14:1; C16:1; C32:1; C50:1; C52:1; C61:1; C69:1,22
+Senegal,TEAM_OR_COUNTRY,7,7,0,C14,0.1429,1.0,0.0,C14:1; C16:1; C32:1; C48:1; C50:1; C65:1; C69:1,23
+France,unknown,5,5,0,C18,0.2,1.0,0.0,C9:1; C18:1; C40:1; C52:1; C60:1,24
+Belgium,TEAM_OR_COUNTRY,4,4,0,C25,0.25,1.0,0.0,C25:1; C32:1; C48:1; C65:1,25
+Paraguay,TEAM_OR_COUNTRY,4,4,0,C45,0.25,1.0,0.0,C8:1; C45:1; C60:1; C69:1,26
+Red Card,REFEREE_VAR_CONCEPT,4,4,0,C16,0.25,1.0,0.0,C7:1; C16:1; C19:1; C33:1,27
+Brad,unknown,3,3,0,C34,0.3333,1.0,0.0,C34:1; C42:1; C47:1,28
+Congo,unknown,3,3,0,C22,0.3333,1.0,0.0,C22:1; C38:1; C41:1,29
+Jordan,TEAM_OR_COUNTRY,3,3,0,C44,0.3333,1.0,0.0,C44:1; C47:1; C67:1,30
+USA,TEAM_OR_COUNTRY,3,3,0,C13,0.3333,1.0,0.0,C8:1; C13:1; C65:1,31
+American,unknown,2,2,0,C13,0.5,1.0,0.0,C13:1; C55:1,32
+Anderson,unknown,2,2,0,C36,0.5,1.0,0.0,C36:1; C42:1,33
+Asian,unknown,2,2,0,C10,0.5,1.0,0.0,C10:1; C11:1,34
+Australia,unknown,2,2,0,C45,0.5,1.0,0.0,C45:1; C54:1,35
+Bellingham,unknown,2,2,0,C42,0.5,1.0,0.0,C42:1; C57:1,36
+Colombia,TEAM_OR_COUNTRY,2,2,0,C36,0.5,1.0,0.0,C36:1; C70:1,37
+Congo DR,TEAM_OR_COUNTRY,2,2,0,C28,0.5,1.0,0.0,C28:1; C36:1,38
+Extra Time,FOOTBALL_CONCEPT,2,2,0,C39,0.5,1.0,0.0,C39:1; C71:1,39
+Spain,unknown,2,2,0,C19,0.5,1.0,0.0,C19:1; C20:1,40
+The World Cup,unknown,2,2,0,C37,0.5,1.0,0.0,C37:1; C55:1,41
+US,unknown,2,2,0,C12,0.5,1.0,0.0,C12:1; C19:1,42
+ADVANCE,unknown,1,1,0,C11,1.0,0.0,0.0,C11:1,43
+AFC,unknown,1,1,0,C54,1.0,0.0,0.0,C54:1,44
+AI,unknown,1,1,0,C54,1.0,0.0,0.0,C54:1,45
+African,unknown,1,1,0,C53,1.0,0.0,0.0,C53:1,46
+African Nations,unknown,1,1,0,C22,1.0,0.0,0.0,C22:1,47
+Algeria,unknown,1,1,0,C46,1.0,0.0,0.0,C46:1,48
+Ali,unknown,1,1,0,C40,1.0,0.0,0.0,C40:1,49
+Americans,unknown,1,1,0,C25,1.0,0.0,0.0,C25:1,50
+Angus Gunn,unknown,1,1,0,C67,1.0,0.0,0.0,C67:1,51
+Anti-keown,unknown,1,1,0,C67,1.0,0.0,0.0,C67:1,52
+Anton,unknown,1,1,0,C20,1.0,0.0,0.0,C20:1,53
+Antony,unknown,1,1,0,C23,1.0,0.0,0.0,C23:1,54
+Arda Guler,unknown,1,1,0,C10,1.0,0.0,0.0,C10:1,55
+Azurri,unknown,1,1,0,C65,1.0,0.0,0.0,C65:1,56
+BBC,unknown,1,1,0,C39,1.0,0.0,0.0,C39:1,57
+Babiš,unknown,1,1,0,C56,1.0,0.0,0.0,C56:1,58
+Balogun,unknown,1,1,0,C59,1.0,0.0,0.0,C59:1,59
+Basin,unknown,1,1,0,C41,1.0,0.0,0.0,C41:1,60
+Bayern,unknown,1,1,0,C15,1.0,0.0,0.0,C15:1,61
+Beautiful,unknown,1,1,0,C43,1.0,0.0,0.0,C43:1,62
+Blue Lock,unknown,1,1,0,C49,1.0,0.0,0.0,C49:1,63
+Bombito,unknown,1,1,0,C23,1.0,0.0,0.0,C23:1,64
+Bosnia,unknown,1,1,0,C57,1.0,0.0,0.0,C57:1,65
+Brad Friedel,unknown,1,1,0,C18,1.0,0.0,0.0,C18:1,66
+C.ronaldo,unknown,1,1,0,C25,1.0,0.0,0.0,C25:1,67
+CAMPEÓN MUNDIAL,unknown,1,1,0,C60,1.0,0.0,0.0,C60:1,68
+Canada,unknown,1,1,0,C23,1.0,0.0,0.0,C23:1,69
+Canada Referee,unknown,1,1,0,C33,1.0,0.0,0.0,C33:1,70
+Canadian,unknown,1,1,0,C33,1.0,0.0,0.0,C33:1,71
+Carlos Alberto,unknown,1,1,0,C46,1.0,0.0,0.0,C46:1,72
+Champions League,unknown,1,1,0,C10,1.0,0.0,0.0,C10:1,73
+Che Adams,unknown,1,1,0,C67,1.0,0.0,0.0,C67:1,74
+Coach,unknown,1,1,0,C41,1.0,0.0,0.0,C41:1,75
+Colombians,unknown,1,1,0,C55,1.0,0.0,0.0,C55:1,76
+Computer Program,unknown,1,1,0,C27,1.0,0.0,0.0,C27:1,77
+Czech,unknown,1,1,0,C56,1.0,0.0,0.0,C56:1,78
+Czechia,unknown,1,1,0,C56,1.0,0.0,0.0,C56:1,79
+Daizen,unknown,1,1,0,C68,1.0,0.0,0.0,C68:1,80
+Deutschland,unknown,1,1,0,C24,1.0,0.0,0.0,C24:1,81
+Don,unknown,1,1,0,C28,1.0,0.0,0.0,C28:1,82
+Embarrassing,unknown,1,1,0,C57,1.0,0.0,0.0,C57:1,83
+England 👀👏👏👏,unknown,1,1,0,C43,1.0,0.0,0.0,C43:1,84
+Every Team,unknown,1,1,0,C27,1.0,0.0,0.0,C27:1,85
+FIFA &,unknown,1,1,0,C35,1.0,0.0,0.0,C35:1,86
+Fair,unknown,1,1,0,C27,1.0,0.0,0.0,C27:1,87
+Fair Play USA,unknown,1,1,0,C13,1.0,0.0,0.0,C13:1,88
+Football,unknown,1,1,0,C43,1.0,0.0,0.0,C43:1,89
+Frank,unknown,1,1,0,C12,1.0,0.0,0.0,C12:1,90
+Georgia,unknown,1,1,0,C21,1.0,0.0,0.0,C21:1,91
+God,unknown,1,1,0,C13,1.0,0.0,0.0,C13:1,92
+Gordon,unknown,1,1,0,C42,1.0,0.0,0.0,C42:1,93
+Great Job,unknown,1,1,0,C30,1.0,0.0,0.0,C30:1,94
+Heavy!!a,unknown,1,1,0,C35,1.0,0.0,0.0,C35:1,95
+ITV,ORG,1,1,0,C51,1.0,0.0,0.0,C51:1,96
+Idk,unknown,1,1,0,C36,1.0,0.0,0.0,C36:1,97
+India,unknown,1,1,0,C29,1.0,0.0,0.0,C29:1,98
+Infantino,unknown,1,1,0,C58,1.0,0.0,0.0,C58:1,99
+Iran,unknown,1,1,0,C21,1.0,0.0,0.0,C21:1,100
+Jurgen,unknown,1,1,0,C64,1.0,0.0,0.0,C64:1,101
+Keane,unknown,1,1,0,C51,1.0,0.0,0.0,C51:1,102
+Keown,unknown,1,1,0,C18,1.0,0.0,0.0,C18:1,103
+Koreans,unknown,1,1,0,C56,1.0,0.0,0.0,C56:1,104
+Kosovo,unknown,1,1,0,C45,1.0,0.0,0.0,C45:1,105
+Madueke,unknown,1,1,0,C34,1.0,0.0,0.0,C34:1,106
+Maradona,unknown,1,1,0,C53,1.0,0.0,0.0,C53:1,107
+Martinez,unknown,1,1,0,C26,1.0,0.0,0.0,C26:1,108
+Mexico,unknown,1,1,0,C47,1.0,0.0,0.0,C47:1,109
+Musiala,unknown,1,1,0,C41,1.0,0.0,0.0,C41:1,110
+Nagelsmann,unknown,1,1,0,C64,1.0,0.0,0.0,C64:1,111
+Netherlands,TEAM_OR_COUNTRY,1,1,0,C62,1.0,0.0,0.0,C62:1,112
+Neymar,unknown,1,1,0,C30,1.0,0.0,0.0,C30:1,113
+PSG,unknown,1,1,0,C26,1.0,0.0,0.0,C26:1,114
+Performance,unknown,1,1,0,C51,1.0,0.0,0.0,C51:1,115
+Pickford,unknown,1,1,0,C34,1.0,0.0,0.0,C34:1,116
+Portugese,unknown,1,1,0,C39,1.0,0.0,0.0,C39:1,117
+Qatar,unknown,1,1,0,C33,1.0,0.0,0.0,C33:1,118
+Rashford,unknown,1,1,0,C44,1.0,0.0,0.0,C44:1,119
+Romania 🇷🇴,unknown,1,1,0,C45,1.0,0.0,0.0,C45:1,120
+Selfish,unknown,1,1,0,C44,1.0,0.0,0.0,C44:1,121
+Sheffield,unknown,1,1,0,C43,1.0,0.0,0.0,C43:1,122
+Simon,unknown,1,1,0,C34,1.0,0.0,0.0,C34:1,123
+Socceroos,unknown,1,1,0,C45,1.0,0.0,0.0,C45:1,124
+South Korea,unknown,1,1,0,C21,1.0,0.0,0.0,C21:1,125
+Stephen A. Smith,unknown,1,1,0,C55,1.0,0.0,0.0,C55:1,126
+Sweden,unknown,1,1,0,C29,1.0,0.0,0.0,C29:1,127
+The Uplands & Savannahs,unknown,1,1,0,C41,1.0,0.0,0.0,C41:1,128
+Turkey,unknown,1,1,0,C8,1.0,0.0,0.0,C8:1,129
+U,unknown,1,1,0,C18,1.0,0.0,0.0,C18:1,130
+Uefa Champions League,unknown,1,1,0,C49,1.0,0.0,0.0,C49:1,131
+Veiga,unknown,1,1,0,C20,1.0,0.0,0.0,C20:1,132
+Vietnam,unknown,1,1,0,C11,1.0,0.0,0.0,C11:1,133
+WC,unknown,1,1,0,C24,1.0,0.0,0.0,C24:1,134
+Watchmojo,unknown,1,1,0,C10,1.0,0.0,0.0,C10:1,135
+Yellow Card,REFEREE_VAR_CONCEPT,1,1,0,C7,1.0,0.0,0.0,C7:1,136
+’s,unknown,1,1,0,C68,1.0,0.0,0.0,C68:1,137
+🇩🇪,unknown,1,1,0,C63,1.0,0.0,0.0,C63:1,138
+🇪,unknown,1,1,0,C63,1.0,0.0,0.0,C63:1,139
+🇭🇲,unknown,1,1,0,C63,1.0,0.0,0.0,C63:1,140
+🇴,unknown,1,1,0,C63,1.0,0.0,0.0,C63:1,141
+🇷,unknown,1,1,0,C30,1.0,0.0,0.0,C30:1,142
+🇸🇪,unknown,1,1,0,C63,1.0,0.0,0.0,C63:1,143

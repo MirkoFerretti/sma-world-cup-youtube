@@ -1,0 +1,17 @@
+metric,value
+edge_threshold_used,2
+users_in_bridge_graph,931
+edges_in_bridge_graph,4133
+bridge_users_computed,931
+bridge_videos_computed,126
+bridge_entities_computed,143
+top_bridge_user_id,a3cbad4ee3a36e24eb968e1557010280776c10f9df18e527b93dccd49c04a4ad
+top_bridge_user_community,C3
+top_bridge_video_title,REACTION to Carlos Queiroz and Jose Mourinho criticizing the 48-team World Cup format | ESPN FC
+top_bridge_video_score,3.1948
+top_bridge_entity,Germany
+top_bridge_entity_score,3.0
+bridge_user_method,unweighted betweenness centrality on the thresholded weight>=2 co-commenting graph
+bridge_video_method,normalized community entropy by user mix multiplied by log1p(total community users on video)
+bridge_entity_method,"compact top_entities presence; score uses detailed mention counts when available, otherwise main-community presence"
+caveats,"Bridge users are anonymized and indicate structural position, not influence; bridge videos indicate cross-community participation, not direct interaction; bridge entities indicate cross-community narrative anchors, not agreement; results depend on the sampled YouTube corpus and the chosen weight>=2 threshold."
