@@ -2,6 +2,20 @@
 
 This repository contains a university Social Media Analytics project on how YouTube users build narrative communities around the FIFA World Cup 2026.
 
+## Project Status
+
+The current YouTube dataset is frozen for this project.
+
+Do not rerun:
+
+- `python src/collect_youtube.py discover`
+- `python src/collect_youtube.py filter-eligible`
+- `python src/collect_youtube.py collect`
+
+unless you intentionally want to restart the data-collection process. YouTube search results, metadata, and comments can change over time, so rerunning collection could produce a different corpus and would require rerunning preprocessing, network construction, community detection, content analysis, and bridge analysis.
+
+The normal workflow from this point starts from the existing collected files and the analysis scripts below.
+
 ## Research Questions
 
 1. Do World Cup 2026 YouTube discussions form participation communities around specific teams, matches, or broader narratives?
@@ -42,25 +56,15 @@ Do not commit `.env` or API keys.
 
 ## Simplified Pipeline
 
-1. Discover candidate videos:
+1. Data collection, already completed and now frozen:
 
 ```powershell
 python src/collect_youtube.py discover --config config/youtube_queries.json --output metadata/video_sampling_pilot.csv
-```
-
-2. Apply automatic eligibility filtering:
-
-```powershell
 python src/collect_youtube.py filter-eligible --candidates metadata/video_sampling_pilot.csv --output metadata/video_sampling_pilot.csv
-```
-
-3. Collect top-level comments from eligible videos:
-
-```powershell
 python src/collect_youtube.py collect --selected metadata/video_sampling_pilot.csv --max-comments 200
 ```
 
-4. Run preprocessing:
+2. Preprocessing:
 
 ```powershell
 python src/clean_comments.py
@@ -68,7 +72,7 @@ python src/clean_comments.py
 
 This preprocessing step creates `data/processed/comments_processed.csv` and `outputs/tables/preprocessing_summary.csv`.
 
-5. Build participation networks and diagnostics:
+3. Network construction:
 
 ```powershell
 python src/build_networks.py
@@ -76,7 +80,7 @@ python src/build_networks.py
 
 This step creates the user-video edge table, the user-user co-commenting edge table, the user-node table, `outputs/tables/network_summary.csv`, and the diagnostic figures in `outputs/figures/`.
 
-6. Detect participation communities:
+4. Community detection:
 
 ```powershell
 python src/detect_communities.py
@@ -84,7 +88,7 @@ python src/detect_communities.py
 
 This step creates the main weight >= 2 community assignments, community summaries, community-video profiles, `outputs/tables/community_detection_summary.csv`, and the PNG report figures in `outputs/figures/`.
 
-7. Profile community content:
+5. Content analysis:
 
 ```powershell
 .\.venv\Scripts\python src/analyze_content.py
@@ -93,6 +97,14 @@ This step creates the main weight >= 2 community assignments, community summarie
 This step creates `data/processed/community_content_summary.csv`, `outputs/tables/content_analysis_summary.csv`, and the four content-analysis PNG figures in `outputs/figures/`.
 
 The main pipeline uses `vaderSentiment` for sentiment, `NRCLex` for the eight-emotion NRC-style analysis, dictionary-based entity normalization, and optional spaCy NER. Full NED/NEL is not used.
+
+6. Bridge analysis:
+
+```powershell
+.\.venv\Scripts\python src/analyze_bridges.py
+```
+
+This step creates `data/processed/bridge_users.csv`, `data/processed/bridge_videos.csv`, `data/processed/bridge_entities.csv`, `outputs/tables/bridge_analysis_summary.csv`, `outputs/figures/bridge_videos.png`, and `outputs/figures/bridge_entities.png`.
 
 Optional detail tables:
 
@@ -121,6 +133,10 @@ This writes detailed comment, term, entity, and representative-comment inspectio
 - `outputs/tables/community_detection_summary.csv`: compact community detection summary
 - `data/processed/community_content_summary.csv`: one-row content summaries for detected communities
 - `outputs/tables/content_analysis_summary.csv`: compact content-analysis summary
+- `data/processed/bridge_users.csv`: bridge-user centrality summary on the main co-commenting graph
+- `data/processed/bridge_videos.csv`: cross-community participation summary for videos
+- `data/processed/bridge_entities.csv`: cross-community bridge-entity summary
+- `outputs/tables/bridge_analysis_summary.csv`: compact bridge-analysis summary
 - `outputs/figures/community_size_distribution.png`: community size figure
 - `outputs/figures/community_size_long_tail.png`: full long-tail community size diagnostic
 - `outputs/figures/community_context_profile.png`: community context profile figure
@@ -135,6 +151,8 @@ This writes detailed comment, term, entity, and representative-comment inspectio
 - `outputs/figures/community_emotion_profile.png`: stacked emotion profile for the main communities
 - `outputs/figures/community_top_terms.png`: top TF-IDF terms for the main communities
 - `outputs/figures/community_entity_profile.png`: entity heatmap for the main communities
+- `outputs/figures/bridge_videos.png`: top bridge videos across communities
+- `outputs/figures/bridge_entities.png`: top bridge entities across communities
 
 Generated outputs can be regenerated and are overwritten by default.
 

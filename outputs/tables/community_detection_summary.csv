@@ -1,0 +1,22 @@
+section,metric,value
+overall,edge_threshold_used,2
+overall,users_in_main_graph,931
+overall,edges_in_main_graph,4133
+overall,communities_detected,71
+overall,modularity,0.5505
+overall,largest_community_users,273
+overall,median_community_users,2.0
+overall,small_communities_under_10_users,64
+overall,communities_with_at_least_20_users,6
+overall,share_users_in_communities_at_least_20,0.7637
+overall,notes_about_threshold_choice,"Main graph uses weight >= 2 because threshold 1 was dominated by one-off overlaps, while threshold 3 retained too few users."
+community_size,C1_users,273
+community_size,C2_users,194
+community_size,C3_users,141
+community_size,C4_users,46
+community_size,C5_users,35
+community_size,C6_users,22
+community_size,C7_users,14
+community_size,C8_users,9
+community_size,C9_users,9
+community_size,C10_users,9

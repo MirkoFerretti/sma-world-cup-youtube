@@ -1,0 +1,13 @@
+metric,value
+sentiment_method,vaderSentiment VADER
+emotion_method,NRCLex / NRC Emotion Lexicon
+entity_method,dictionary normalization + optional spaCy NER
+full_nel_ned_used,false
+entity_normalization_used,true
+spacy_ner_used,true
+comments_analyzed,2838
+main_communities_analyzed,6
+tfidf_terms_generated,1394
+entities_extracted,2486
+representative_comments_selected,30
+caveats,"Sentiment and emotion scores are lexicon-based and approximate; sarcasm, football slang, and imperfect entity matching remain possible."
