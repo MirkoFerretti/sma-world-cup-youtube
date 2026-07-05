@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import math
+import re
 import textwrap
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -22,10 +23,10 @@ from config import FIGURES_DIR, PROCESSED_DATA_DIR, ROOT_DIR, TABLES_DIR
 DEFAULT_EDGES_PATH = PROCESSED_DATA_DIR / "user_network_edges.csv"
 DEFAULT_NODES_PATH = PROCESSED_DATA_DIR / "user_network_nodes.csv"
 DEFAULT_USER_VIDEO_PATH = PROCESSED_DATA_DIR / "user_video_edges.csv"
+DEFAULT_COMMENTS_PATH = PROCESSED_DATA_DIR / "comments_processed.csv"
 DEFAULT_COMMUNITIES_PATH = PROCESSED_DATA_DIR / "user_communities.csv"
 DEFAULT_COMMUNITY_SUMMARY_PATH = PROCESSED_DATA_DIR / "community_summary.csv"
 DEFAULT_CONTENT_SUMMARY_PATH = PROCESSED_DATA_DIR / "community_content_summary.csv"
-DEFAULT_DETAILED_ENTITY_PATH = PROCESSED_DATA_DIR / "community_entities.csv"
 DEFAULT_ENTITY_DICTIONARY_PATH = ROOT_DIR / "config" / "entity_dictionary.csv"
 DEFAULT_OUTPUT_USERS = PROCESSED_DATA_DIR / "bridge_users.csv"
 DEFAULT_OUTPUT_VIDEOS = PROCESSED_DATA_DIR / "bridge_videos.csv"
@@ -53,11 +54,10 @@ USER_VIDEO_REQUIRED_COLUMNS = [
     "primary_category",
     "video_context_type",
 ]
+COMMENT_REQUIRED_COLUMNS = ["comment_id", "author_id", "clean_text"]
 COMMUNITY_REQUIRED_COLUMNS = ["author_id", "community_id", "community_label"]
 COMMUNITY_SUMMARY_REQUIRED_COLUMNS = ["community_id", "community_label", "users"]
-CONTENT_SUMMARY_REQUIRED_COLUMNS = ["community_id", "community_label", "top_entities"]
-ENTITY_DICTIONARY_REQUIRED_COLUMNS = ["normalized_entity", "entity_type"]
-DETAILED_ENTITY_REQUIRED_COLUMNS = ["community_id", "community_label", "normalized_entity", "entity_type", "mention_count"]
+ENTITY_DICTIONARY_REQUIRED_COLUMNS = ["pattern", "normalized_entity", "entity_type"]
 
 SUMMARY_METRIC_ORDER = [
     "edge_threshold_used",
@@ -75,6 +75,7 @@ SUMMARY_METRIC_ORDER = [
     "bridge_user_method",
     "bridge_video_method",
     "bridge_entity_method",
+    "bridge_entity_score_formula",
     "caveats",
 ]
 
@@ -90,6 +91,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--edges", default=str(DEFAULT_EDGES_PATH.relative_to(ROOT_DIR)), help="User-user edge CSV path.")
     parser.add_argument("--nodes", default=str(DEFAULT_NODES_PATH.relative_to(ROOT_DIR)), help="User-node CSV path.")
     parser.add_argument("--user-video", default=str(DEFAULT_USER_VIDEO_PATH.relative_to(ROOT_DIR)), help="User-video edge CSV path.")
+    parser.add_argument("--comments", default=str(DEFAULT_COMMENTS_PATH.relative_to(ROOT_DIR)), help="Processed comments CSV path.")
     parser.add_argument("--communities", default=str(DEFAULT_COMMUNITIES_PATH.relative_to(ROOT_DIR)), help="User-community CSV path.")
     parser.add_argument(
         "--community-summary",
@@ -99,7 +101,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--content-summary",
         default=str(DEFAULT_CONTENT_SUMMARY_PATH.relative_to(ROOT_DIR)),
-        help="Community content summary CSV path.",
+        help="Accepted for CLI compatibility; bridge-entity scoring now uses comment-level dictionary matches.",
     )
     parser.add_argument("--threshold", type=int, default=DEFAULT_THRESHOLD, help="Minimum edge weight for the bridge graph.")
     parser.add_argument(
@@ -263,6 +265,16 @@ def load_user_video_edges(path: Path) -> pd.DataFrame:
     return user_video_df.reset_index(drop=True)
 
 
+def load_comments(path: Path) -> pd.DataFrame:
+    """Load processed comments used for comment-level bridge entities."""
+    comments_df = pd.read_csv(path)
+    require_columns(comments_df, COMMENT_REQUIRED_COLUMNS, display_path(path))
+    comments_df["comment_id"] = comments_df["comment_id"].astype(str)
+    comments_df["author_id"] = comments_df["author_id"].astype(str)
+    comments_df["clean_text"] = comments_df["clean_text"].fillna("").astype(str)
+    return comments_df[COMMENT_REQUIRED_COLUMNS].drop_duplicates(subset=["comment_id"]).reset_index(drop=True)
+
+
 def load_user_communities(path: Path) -> pd.DataFrame:
     """Load detected user-community assignments."""
     communities_df = pd.read_csv(path)
@@ -283,16 +295,6 @@ def load_community_summary(path: Path) -> pd.DataFrame:
     return community_summary_df.reset_index(drop=True)
 
 
-def load_content_summary(path: Path) -> pd.DataFrame:
-    """Load compact content summary used for bridge entities."""
-    content_summary_df = pd.read_csv(path)
-    require_columns(content_summary_df, CONTENT_SUMMARY_REQUIRED_COLUMNS, display_path(path))
-    content_summary_df["community_id"] = pd.to_numeric(content_summary_df["community_id"], errors="raise").astype(int)
-    content_summary_df["community_label"] = content_summary_df["community_label"].astype(str)
-    content_summary_df["top_entities"] = content_summary_df["top_entities"].fillna("").astype(str)
-    return content_summary_df.reset_index(drop=True)
-
-
 def load_entity_type_lookup(path: Path) -> dict[str, str]:
     """Load normalized entity to entity-type mappings."""
     if not path.exists():
@@ -306,6 +308,69 @@ def load_entity_type_lookup(path: Path) -> dict[str, str]:
         if normalized_entity and entity_type and normalized_entity not in lookup:
             lookup[normalized_entity] = entity_type
     return lookup
+
+
+def normalize_entity_text(text: str) -> str:
+    """Normalize entity surface text while preserving short acronyms."""
+    cleaned = re.sub(r"\s+", " ", str(text).strip(" \t\r\n\"'.,!?;:()[]{}"))
+    if not cleaned:
+        return ""
+    if cleaned.isupper() and len(cleaned) <= 8:
+        return cleaned
+    parts = []
+    for part in cleaned.split(" "):
+        parts.append(part if part.isupper() else part.capitalize())
+    return " ".join(parts)
+
+
+def compile_phrase_pattern(phrase: str) -> re.Pattern[str]:
+    """Compile a case-insensitive boundary-aware phrase pattern."""
+    escaped = re.escape(phrase.strip())
+    escaped = escaped.replace(r"\ ", r"\s+")
+    return re.compile(rf"(?<!\w){escaped}(?!\w)", flags=re.IGNORECASE)
+
+
+def normalize_pattern_key(value: str) -> str:
+    """Normalize a dictionary alias key for case-insensitive lookups."""
+    return re.sub(r"\s+", " ", value.strip().casefold())
+
+
+def spans_overlap(left: tuple[int, int], right: tuple[int, int]) -> bool:
+    """Return True when two text spans overlap."""
+    return left[0] < right[1] and right[0] < left[1]
+
+
+def load_compiled_entity_dictionary(path: Path) -> dict[str, Any]:
+    """Load and compile the dictionary-based normalized entity matcher."""
+    dictionary_df = pd.read_csv(path)
+    require_columns(dictionary_df, ENTITY_DICTIONARY_REQUIRED_COLUMNS, display_path(path))
+
+    compiled_entries: list[dict[str, Any]] = []
+    alias_lookup: dict[str, str] = {}
+    for row in dictionary_df.itertuples(index=False):
+        pattern = normalize_label(row.pattern, fallback="")
+        normalized_entity = normalize_entity_text(normalize_label(row.normalized_entity, fallback=""))
+        entity_type = normalize_label(row.entity_type, fallback="unknown")
+        if not pattern or not normalized_entity:
+            continue
+        compiled_entries.append(
+            {
+                "pattern": pattern,
+                "normalized_entity": normalized_entity,
+                "entity_type": entity_type,
+                "regex": compile_phrase_pattern(pattern),
+                "pattern_length": len(pattern),
+                "token_length": len(pattern.split()),
+            }
+        )
+        alias_lookup[normalize_pattern_key(pattern)] = entity_type
+    if not compiled_entries:
+        raise ValueError(f"Entity dictionary is empty: {display_path(path)}")
+    compiled_entries = sorted(
+        compiled_entries,
+        key=lambda entry: (-entry["pattern_length"], -entry["token_length"], entry["pattern"].casefold()),
+    )
+    return {"entries": compiled_entries, "alias_lookup": alias_lookup}
 
 
 def main_community_lookup(community_summary_df: pd.DataFrame, min_main_community_users: int) -> tuple[set[int], dict[int, str]]:
@@ -332,6 +397,16 @@ def normalized_entropy_from_counts(counts: list[float]) -> float:
     probabilities = [value / total for value in positive_counts]
     entropy = -sum(probability * math.log(probability) for probability in probabilities if probability > 0)
     return entropy / math.log(len(positive_counts))
+
+
+def participation_coefficient_from_counts(counts: list[float]) -> float:
+    """Compute a participation-coefficient-style spread metric from community counts."""
+    positive_counts = [float(value) for value in counts if float(value) > 0]
+    if not positive_counts:
+        return 0.0
+    total = sum(positive_counts)
+    probabilities = [value / total for value in positive_counts]
+    return 1.0 - sum(probability * probability for probability in probabilities)
 
 
 def build_bridge_graph(edges_df: pd.DataFrame) -> nx.Graph:
@@ -496,109 +571,106 @@ def compute_bridge_videos(
     ]
 
 
-def parse_top_entities(text: str) -> list[str]:
-    """Parse a semicolon-separated compact entity list."""
-    entities: list[str] = []
-    for raw_part in str(text).split(";"):
-        entity = raw_part.strip()
-        if entity:
-            entities.append(entity)
-    return entities
+def prepare_comments_with_communities(comments_df: pd.DataFrame, communities_df: pd.DataFrame) -> pd.DataFrame:
+    """Attach detected communities to processed comments."""
+    merged_df = comments_df.merge(
+        communities_df[["author_id", "community_id", "community_label"]],
+        on="author_id",
+        how="inner",
+        validate="many_to_one",
+    )
+    if merged_df.empty:
+        raise ValueError("No processed comments matched detected communities for bridge-entity analysis.")
+    return merged_df.sort_values(["community_id", "comment_id"], kind="stable").reset_index(drop=True)
 
 
-def build_entity_presence_rows(
-    content_summary_df: pd.DataFrame,
-    entity_type_lookup: dict[str, str],
-) -> pd.DataFrame:
-    """Build community-entity rows from compact top-entity summaries."""
-    rows: list[dict[str, Any]] = []
-    for row in content_summary_df.itertuples(index=False):
-        seen_entities: set[str] = set()
-        for entity in parse_top_entities(row.top_entities):
-            if entity in seen_entities:
+def extract_dictionary_entities(text: str, compiled_dictionary: dict[str, Any]) -> dict[str, dict[str, str]]:
+    """Extract normalized dictionary entities from one comment without double-counting."""
+    records: dict[str, dict[str, str]] = {}
+    occupied_spans: list[tuple[int, int]] = []
+    for entry in compiled_dictionary["entries"]:
+        matches = list(entry["regex"].finditer(text))
+        if not matches:
+            continue
+        for match in matches:
+            span = match.span()
+            if any(spans_overlap(span, other_span) for other_span in occupied_spans):
                 continue
-            seen_entities.add(entity)
+            occupied_spans.append(span)
+            key = entry["normalized_entity"].casefold()
+            if key not in records:
+                records[key] = {
+                    "normalized_entity": entry["normalized_entity"],
+                    "entity_type": entry["entity_type"],
+                }
+    return records
+
+
+def extract_comment_level_entity_rows(
+    comments_with_communities_df: pd.DataFrame,
+    compiled_dictionary: dict[str, Any],
+) -> pd.DataFrame:
+    """Return one row per comment-community-entity match."""
+    rows: list[dict[str, Any]] = []
+    for row in comments_with_communities_df.itertuples(index=False):
+        entity_records = extract_dictionary_entities(str(row.clean_text), compiled_dictionary)
+        for record in entity_records.values():
             rows.append(
                 {
+                    "comment_id": row.comment_id,
                     "community_id": int(row.community_id),
                     "community_label": str(row.community_label),
-                    "normalized_entity": entity,
-                    "entity_type": entity_type_lookup.get(entity, "unknown"),
-                    "mention_count": 1,
+                    "normalized_entity": record["normalized_entity"],
+                    "entity_type": record["entity_type"],
                 }
             )
     if not rows:
-        raise ValueError("No entities could be parsed from community_content_summary.csv top_entities.")
+        raise ValueError("No dictionary-based bridge entities were found in the processed comments.")
     return pd.DataFrame(rows)
 
 
-def build_detailed_entity_rows(path: Path, entity_type_lookup: dict[str, str]) -> pd.DataFrame:
-    """Build community-entity rows from the optional detailed entity table."""
-    detailed_df = pd.read_csv(path)
-    require_columns(detailed_df, DETAILED_ENTITY_REQUIRED_COLUMNS, display_path(path))
-    detailed_df["community_id"] = pd.to_numeric(detailed_df["community_id"], errors="raise").astype(int)
-    detailed_df["community_label"] = detailed_df["community_label"].astype(str)
-    detailed_df["normalized_entity"] = detailed_df["normalized_entity"].apply(lambda value: normalize_label(value, fallback=""))
-    detailed_df["entity_type"] = detailed_df["entity_type"].apply(lambda value: normalize_label(value, fallback=""))
-    detailed_df["mention_count"] = pd.to_numeric(detailed_df["mention_count"], errors="coerce").fillna(0).astype(int)
-    detailed_df = detailed_df[(detailed_df["normalized_entity"] != "") & (detailed_df["mention_count"] > 0)].copy()
-    if detailed_df.empty:
-        raise ValueError(f"Detailed entity table is empty: {display_path(path)}")
-    detailed_df["entity_type"] = detailed_df.apply(
-        lambda row: row["entity_type"] if row["entity_type"] != "unknown" else entity_type_lookup.get(row["normalized_entity"], "unknown"),
-        axis=1,
-    )
-    return (
-        detailed_df.groupby(["community_id", "community_label", "normalized_entity", "entity_type"], as_index=False)["mention_count"]
-        .sum()
+def compute_bridge_entities(
+    comments_df: pd.DataFrame,
+    communities_df: pd.DataFrame,
+    main_community_ids: set[int],
+    compiled_dictionary: dict[str, Any],
+) -> tuple[pd.DataFrame, str]:
+    """Compute bridge-entity metrics from comment-level dictionary matches across all communities."""
+    comments_with_communities_df = prepare_comments_with_communities(comments_df, communities_df)
+    entity_matches_df = extract_comment_level_entity_rows(comments_with_communities_df, compiled_dictionary)
+    entity_rows_df = (
+        entity_matches_df.groupby(["community_id", "community_label", "normalized_entity", "entity_type"], as_index=False)
+        .size()
+        .rename(columns={"size": "comments_with_entity"})
         .reset_index(drop=True)
     )
 
-
-def compute_bridge_entities(
-    content_summary_df: pd.DataFrame,
-    main_community_ids: set[int],
-    entity_type_lookup: dict[str, str],
-) -> tuple[pd.DataFrame, str]:
-    """Compute bridge-entity metrics from detailed counts or compact entity presence."""
-    if DEFAULT_DETAILED_ENTITY_PATH.exists():
-        entity_rows_df = build_detailed_entity_rows(DEFAULT_DETAILED_ENTITY_PATH, entity_type_lookup)
-        score_method = "detailed counts"
-        count_based = True
-    else:
-        entity_rows_df = build_entity_presence_rows(content_summary_df, entity_type_lookup)
-        score_method = "compact top_entities presence"
-        count_based = False
-
     rows: list[dict[str, Any]] = []
     for entity, entity_df in entity_rows_df.groupby("normalized_entity", sort=False):
-        total_mentions = int(entity_df["mention_count"].sum())
+        total_comments_with_entity = int(entity_df["comments_with_entity"].sum())
         communities_mentioned_in = int(entity_df["community_id"].nunique())
         main_communities_mentioned_in = int(entity_df.loc[entity_df["community_id"].isin(main_community_ids), "community_id"].nunique())
         dominant_row = entity_df.sort_values(
-            ["mention_count", "community_label"],
+            ["comments_with_entity", "community_label"],
             ascending=[False, True],
             kind="stable",
         ).iloc[0]
-        dominant_share = float(dominant_row["mention_count"]) / total_mentions if total_mentions else 0.0
-        normalized_entropy = normalized_entropy_from_counts(entity_df["mention_count"].tolist())
-        if count_based:
-            bridge_score = normalized_entropy * math.log1p(total_mentions)
-        else:
-            bridge_score = float(main_communities_mentioned_in)
-        mix_records = [(str(row.community_label), int(row.mention_count)) for row in entity_df.itertuples(index=False)]
-        entity_type = normalize_label(dominant_row["entity_type"], fallback=entity_type_lookup.get(entity, "unknown"))
+        dominant_share = float(dominant_row["comments_with_entity"]) / total_comments_with_entity if total_comments_with_entity else 0.0
+        participation_coefficient = participation_coefficient_from_counts(entity_df["comments_with_entity"].tolist())
+        bridge_score = participation_coefficient * math.log1p(total_comments_with_entity)
+        mix_records = [(str(row.community_label), int(row.comments_with_entity)) for row in entity_df.itertuples(index=False)]
+        entity_type = normalize_label(dominant_row["entity_type"], fallback="unknown")
 
         rows.append(
             {
                 "normalized_entity": entity,
                 "entity_type": entity_type,
-                "total_mentions": total_mentions,
+                "total_comments_with_entity": total_comments_with_entity,
                 "communities_mentioned_in": communities_mentioned_in,
                 "main_communities_mentioned_in": main_communities_mentioned_in,
+                "participation_coefficient": round_metric(participation_coefficient),
                 "dominant_community": str(dominant_row["community_label"]),
                 "dominant_community_share": round_metric(dominant_share),
-                "community_entropy": round_metric(normalized_entropy),
                 "bridge_entity_score": round_metric(bridge_score),
                 "community_mix": format_mix(mix_records),
             }
@@ -606,8 +678,8 @@ def compute_bridge_entities(
 
     bridge_entities_df = pd.DataFrame(rows)
     bridge_entities_df = bridge_entities_df.sort_values(
-        ["bridge_entity_score", "main_communities_mentioned_in", "communities_mentioned_in", "total_mentions", "normalized_entity"],
-        ascending=[False, False, False, False, True],
+        ["bridge_entity_score", "total_comments_with_entity", "communities_mentioned_in", "normalized_entity"],
+        ascending=[False, False, False, True],
         kind="stable",
     ).reset_index(drop=True)
     bridge_entities_df["bridge_entity_rank"] = range(1, len(bridge_entities_df) + 1)
@@ -616,18 +688,18 @@ def compute_bridge_entities(
             [
                 "normalized_entity",
                 "entity_type",
-                "total_mentions",
+                "total_comments_with_entity",
                 "communities_mentioned_in",
                 "main_communities_mentioned_in",
+                "participation_coefficient",
                 "dominant_community",
                 "dominant_community_share",
-                "community_entropy",
                 "bridge_entity_score",
                 "community_mix",
                 "bridge_entity_rank",
             ]
         ],
-        score_method,
+        "participation coefficient across all detected communities + log mention support",
     )
 
 
@@ -684,11 +756,15 @@ def create_bridge_entities_figure(bridge_entities_df: pd.DataFrame, top_n: int) 
     axis.set_axisbelow(True)
 
     xmax = float(figure_df["bridge_entity_score"].max()) if len(figure_df) else 0.0
-    for bar, main_count in zip(bars, figure_df["main_communities_mentioned_in"]):
+    for bar, community_count, main_count in zip(
+        bars,
+        figure_df["communities_mentioned_in"],
+        figure_df["main_communities_mentioned_in"],
+    ):
         axis.text(
             bar.get_width() + max(xmax * 0.02, 0.03),
             bar.get_y() + bar.get_height() / 2,
-            f"{int(main_count)} main",
+            f"{int(community_count)} communities / {int(main_count)} main communities",
             va="center",
             ha="left",
             fontsize=9,
@@ -726,7 +802,8 @@ def build_summary_table(
         "top_bridge_entity_score": round_metric(top_entity["bridge_entity_score"]),
         "bridge_user_method": "unweighted betweenness centrality on the thresholded weight>=2 co-commenting graph",
         "bridge_video_method": "normalized community entropy by user mix multiplied by log1p(total community users on video)",
-        "bridge_entity_method": f"{entity_method_detail}; score uses detailed mention counts when available, otherwise main-community presence",
+        "bridge_entity_method": entity_method_detail,
+        "bridge_entity_score_formula": "participation_coefficient * log1p(total_comments_with_entity)",
         "caveats": (
             "Bridge users are anonymized and indicate structural position, not influence; "
             "bridge videos indicate cross-community participation, not direct interaction; "
@@ -752,9 +829,9 @@ def main() -> None:
     edges_path = resolve_path(args.edges)
     nodes_path = resolve_path(args.nodes)
     user_video_path = resolve_path(args.user_video)
+    comments_path = resolve_path(args.comments)
     communities_path = resolve_path(args.communities)
     community_summary_path = resolve_path(args.community_summary)
-    content_summary_path = resolve_path(args.content_summary)
     output_users_path = resolve_path(args.output_users)
     output_videos_path = resolve_path(args.output_videos)
     output_entities_path = resolve_path(args.output_entities)
@@ -765,9 +842,10 @@ def main() -> None:
         edges_path,
         nodes_path,
         user_video_path,
+        comments_path,
         communities_path,
         community_summary_path,
-        content_summary_path,
+        DEFAULT_ENTITY_DICTIONARY_PATH,
     ]
     for required_path in required_paths:
         if not required_path.exists():
@@ -776,16 +854,16 @@ def main() -> None:
     edges_df = load_edges(edges_path, threshold=args.threshold)
     nodes_df = load_nodes(nodes_path)
     user_video_df = load_user_video_edges(user_video_path)
+    comments_df = load_comments(comments_path)
     communities_df = load_user_communities(communities_path)
     community_summary_df = load_community_summary(community_summary_path)
-    content_summary_df = load_content_summary(content_summary_path)
-    entity_type_lookup = load_entity_type_lookup(DEFAULT_ENTITY_DICTIONARY_PATH)
+    compiled_dictionary = load_compiled_entity_dictionary(DEFAULT_ENTITY_DICTIONARY_PATH)
 
     main_community_ids, _ = main_community_lookup(community_summary_df, min_main_community_users=args.min_main_community_users)
     graph = build_bridge_graph(edges_df)
     bridge_users_df = compute_bridge_users(graph, nodes_df, communities_df)
     bridge_videos_df = compute_bridge_videos(user_video_df, communities_df, main_community_ids)
-    bridge_entities_df, entity_method_detail = compute_bridge_entities(content_summary_df, main_community_ids, entity_type_lookup)
+    bridge_entities_df, entity_method_detail = compute_bridge_entities(comments_df, communities_df, main_community_ids, compiled_dictionary)
     summary_df = build_summary_table(
         threshold=args.threshold,
         graph=graph,
@@ -819,6 +897,7 @@ def main() -> None:
     print_status(
         f"Top bridge entity: {bridge_entities_df.iloc[0]['normalized_entity']} | score={round_metric(bridge_entities_df.iloc[0]['bridge_entity_score'])}"
     )
+    print_status("Bridge entities use comment-level dictionary matching across all detected communities.")
     print_status(f"Generated figures: {display_path(bridge_videos_figure_path)} | {display_path(bridge_entities_figure_path)}")
 
 
