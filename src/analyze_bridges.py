@@ -712,6 +712,11 @@ def wrapped_label(primary_text: str, secondary_text: str, width: int) -> str:
 
 def create_bridge_videos_figure(bridge_videos_df: pd.DataFrame, top_n: int) -> plt.Figure:
     """Create a horizontal bar chart of the top bridge videos."""
+    def format_representation_annotation(community_count: int, main_count: int) -> str:
+        community_label = "community" if int(community_count) == 1 else "communities"
+        main_label = "main community" if int(main_count) == 1 else "main communities"
+        return f"{int(community_count)} {community_label} / {int(main_count)} {main_label}"
+
     figure_df = bridge_videos_df.head(top_n).copy()
     if figure_df.empty:
         raise ValueError("No bridge videos are available for plotting.")
@@ -726,11 +731,15 @@ def create_bridge_videos_figure(bridge_videos_df: pd.DataFrame, top_n: int) -> p
     axis.set_axisbelow(True)
 
     xmax = float(figure_df["bridge_video_score"].max()) if len(figure_df) else 0.0
-    for bar, main_count in zip(bars, figure_df["main_communities_represented"]):
+    for bar, community_count, main_count in zip(
+        bars,
+        figure_df["communities_represented"],
+        figure_df["main_communities_represented"],
+    ):
         axis.text(
             bar.get_width() + max(xmax * 0.02, 0.03),
             bar.get_y() + bar.get_height() / 2,
-            f"{int(main_count)} main",
+            format_representation_annotation(community_count, main_count),
             va="center",
             ha="left",
             fontsize=9,

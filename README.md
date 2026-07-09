@@ -155,7 +155,3 @@ This writes detailed comment, term, entity, and representative-comment inspectio
 - `outputs/figures/bridge_entities.png`: top bridge entities across communities
 
 Generated outputs can be regenerated and are overwritten by default.
-
-## Method Note
-
-Later co-commenting networks represent shared participation in the same video discussion space, not direct interaction between users.
